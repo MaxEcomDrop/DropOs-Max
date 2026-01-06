@@ -1,0 +1,170 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DropOS Max - Nu Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --nu-purple: #820AD1;
+            --success: #03D56F;
+            --danger: #FF5252;
+        }
+
+        /* Light Theme (Default) */
+        [data-theme='light'] {
+            --bg-primary: #F0F2F6;
+            --bg-card: #FFFFFF;
+            --bg-input: #FFFFFF;
+            --text-main: #262626;
+            --text-muted: #666666;
+            --border-color: #E2E8F0;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            --nav-bg: #FFFFFF;
+        }
+
+        /* Dark Theme */
+        [data-theme='dark'] {
+            --bg-primary: #191919;
+            --bg-card: #262626;
+            --bg-input: #1F1F1F;
+            --text-main: #F5F5F5;
+            --text-muted: #94A3B8;
+            --border-color: #333333;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            --nav-bg: #262626;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            margin: 0;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        .nu-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+            transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .nu-button-primary {
+            background-color: var(--nu-purple);
+            color: #FFFFFF;
+            font-weight: 600;
+            border-radius: 50px;
+            padding: 12px 24px;
+            transition: all 0.2s ease;
+        }
+
+        .nu-button-primary:hover {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+
+        .nu-input {
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            border-radius: 12px;
+            padding: 14px;
+            width: 100%;
+            transition: border-color 0.2s, background-color 0.3s;
+        }
+
+        .nu-input:focus {
+            outline: none;
+            border-color: var(--nu-purple);
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 75px;
+            background: var(--nav-bg);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding-bottom: env(safe-area-inset-bottom);
+            z-index: 9999;
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
+        }
+
+        .nav-item-mobile {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            flex: 1;
+            height: 100%;
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+        }
+
+        .nav-item-mobile.active {
+            color: var(--nu-purple);
+        }
+
+        .nav-item-mobile .icon-container {
+            padding: 6px 16px;
+            border-radius: 20px;
+            transition: background-color 0.2s ease;
+        }
+
+        .nav-item-mobile.active .icon-container {
+            background-color: rgba(130, 10, 209, 0.1);
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--nu-purple);
+        }
+
+        .blur-amount {
+            filter: blur(10px);
+            user-select: none;
+        }
+
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "recharts": "https://esm.sh/recharts@^3.6.0",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.39.7"
+  }
+}
+</script>
+</head>
+<body>
+    <div id="root"></div>
+</body>
+</html>
