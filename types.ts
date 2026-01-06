@@ -7,11 +7,10 @@ export type FinanceCategory = 'Pró-labore' | 'Luz' | 'Internet' | 'Fornecedor' 
 
 export interface Supplier {
   id: string;
-  nome: string;
-  contato: string;
-  prazo_entrega: number;
+  nome_empresa: string;
+  contato_whatsapp: string;
   saldo_haver: number;
-  atraso_medio?: number; // Em dias
+  prazo_entrega: number;
   created_at?: string;
 }
 
@@ -19,15 +18,24 @@ export interface Product {
   id: string;
   sku: string;
   nome: string;
+  estoque_tipo: StockType;
   fornecedor_id: string;
   custo: number;
   preco_venda: number;
-  estoque_tipo: StockType;
   quantidade: number;
   min_estoque: number;
   last_sold_at?: string;
   created_at?: string;
-  custo_historico?: number;
+}
+
+export interface FinancialEntry {
+  id: string;
+  descricao: string;
+  tipo: TransactionType;
+  valor: number;
+  data_vencimento: string;
+  status: 'Pago' | 'Pendente';
+  created_at?: string;
 }
 
 export interface Sale {
@@ -41,17 +49,4 @@ export interface Sale {
   valor_liquido: number;
   is_servico: boolean;
   is_devolucao: boolean;
-  margem_real?: number;
-}
-
-export interface FinancialEntry {
-  id: string;
-  descricao: string;
-  tipo: TransactionType;
-  categoria: FinanceCategory;
-  status: 'Pago' | 'Pendente';
-  valor: number;
-  data: string;
-  is_pessoal?: boolean;
-  created_at?: string;
 }
