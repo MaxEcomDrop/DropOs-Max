@@ -1,7 +1,6 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Prioriza variáveis de ambiente. Se não existirem, o app entra em modo visual seguro.
 const supabaseUrl = (window as any).process?.env?.SUPABASE_URL || '';
 const supabaseKey = (window as any).process?.env?.SUPABASE_ANON_KEY || '';
 
@@ -11,12 +10,12 @@ export const supabase = (supabaseUrl && supabaseKey)
 
 export const handleSupabaseError = (error: any) => {
   if (!supabase) {
-    console.warn('Configuração do Supabase ausente. Operações de salvamento não funcionarão.');
+    console.warn('Conexão Supabase não detectada.');
     return true;
   }
   if (error) {
-    console.error('Supabase Error:', error.message);
-    alert(`ERRO NO BANCO: ${error.message}`);
+    console.error('Erro de Operação:', error.message);
+    alert(`Erro no Banco: ${error.message}`);
     return true;
   }
   return false;
