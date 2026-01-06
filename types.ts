@@ -3,14 +3,12 @@ export type StockType = 'Físico' | 'Virtual';
 export type Channel = 'Mercado Livre' | 'Shopee' | 'WhatsApp' | 'Balcão';
 export type CNPJ = 'Loja A' | 'Loja B';
 export type TransactionType = 'Entrada' | 'Saída';
-export type FinanceCategory = 'Pró-labore' | 'Luz' | 'Internet' | 'Fornecedor' | 'Venda Avulsa' | 'Outros';
 
 export interface Supplier {
   id: string;
-  nome_empresa: string;
-  contato_whatsapp: string;
+  nome: string; // Mapeado de nome_empresa
+  contato: string; // Mapeado de contato_whatsapp
   saldo_haver: number;
-  prazo_entrega: number;
   created_at?: string;
 }
 
@@ -18,13 +16,11 @@ export interface Product {
   id: string;
   sku: string;
   nome: string;
-  estoque_tipo: StockType;
-  fornecedor_id: string;
+  tipo: StockType; // Mapeado de estoque_tipo
+  fornecedor: string; // Mapeado de fornecedor_id
   custo: number;
   preco_venda: number;
-  quantidade: number;
-  min_estoque: number;
-  last_sold_at?: string;
+  quantidade?: number; // Adicionado para controle local, embora não citado no prompt de schema
   created_at?: string;
 }
 
@@ -33,20 +29,20 @@ export interface FinancialEntry {
   descricao: string;
   tipo: TransactionType;
   valor: number;
-  data_vencimento: string;
+  vencimento: string; // Mapeado de data_vencimento
   status: 'Pago' | 'Pendente';
   created_at?: string;
 }
 
 export interface Sale {
   id: string;
-  data: string;
+  data_venda: string; // Mapeado de data
   canal: Channel;
-  cnpj: CNPJ;
-  product_id: string;
-  quantidade: number;
+  loja: string; // Mapeado de cnpj
+  produto: string; // Mapeado de product_id (nome ou id do produto)
+  qtd: number; // Mapeado de quantidade
   valor_bruto: number;
   valor_liquido: number;
-  is_servico: boolean;
-  is_devolucao: boolean;
+  custo_produto: number; // Novo campo obrigatório
+  lucro_real: number; // Novo campo obrigatório
 }

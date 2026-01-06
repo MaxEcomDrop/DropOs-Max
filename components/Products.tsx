@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Package, Users, Trash2, X, Save, AlertCircle } from 'lucide-react';
+import { Plus, Package, Users, Trash2 } from 'lucide-react';
 import { Product, Supplier } from '../types';
 import { supabase, handleSupabaseError } from '../lib/supabase';
 
@@ -10,8 +10,21 @@ export const Products: React.FC<{ isOlheiro: boolean }> = ({ isOlheiro }) => {
   const [activeTab, setActiveTab] = useState<'lista' | 'fornecedor' | 'produto'>('lista');
   const [loading, setLoading] = useState(false);
 
-  const [supForm, setSupForm] = useState({ nome_empresa: '', contato_whatsapp: '', saldo_haver: 0, prazo_entrega: 0 });
-  const [prodForm, setProdForm] = useState({ sku: '', nome: '', estoque_tipo: 'Físico', fornecedor_id: '', custo: 0, preco_venda: 0, quantidade: 0, min_estoque: 5 });
+  // Estados dos formulários com nomes internos para o UI, mas mapeados no INSERT
+  const [supForm, setSupForm] = useState({ 
+    nome: '', 
+    contato: '', 
+    saldo_haver: 0 
+  });
+  
+  const [prodForm, setProdForm] = useState({ 
+    sku: '', 
+    nome: '', 
+    tipo: 'Físico' as any, 
+    fornecedor: '', 
+    custo: 0, 
+    preco_venda: 0
+  });
 
   useEffect(() => { fetchData(); }, []);
 
@@ -19,7 +32,7 @@ export const Products: React.FC<{ isOlheiro: boolean }> = ({ isOlheiro }) => {
     if (!supabase) return;
     setLoading(true);
     const { data: p } = await supabase.from('produtos').select('*').order('created_at', { ascending: false });
-    const { data: s } = await supabase.from('fornecedores').select('*').order('nome_empresa');
+    const { data: s } = await supabase.from('fornecedores').select('*').order('nome');
     setProducts(p || []);
     setSuppliers(s || []);
     setLoading(false);
@@ -28,10 +41,17 @@ export const Products: React.FC<{ isOlheiro: boolean }> = ({ isOlheiro }) => {
   const onSaveSupplier = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!supabase) return;
-    const { error } = await supabase.from('fornecedores').insert([supForm]);
+    
+    // Mapeamento exato para a tabela 'fornecedores' do Supabase
+    const { error } = await supabase.from('fornecedores').insert([{
+      nome: supForm.nome,
+      contato: supForm.contato,
+      saldo_haver: supForm.saldo_haver
+    }]);
+
     if (!handleSupabaseError(error)) {
       alert("Fornecedor cadastrado com sucesso!");
-      setSupForm({ nome_empresa: '', contato_whatsapp: '', saldo_haver: 0, prazo_entrega: 0 });
+      setSupForm({ nome: '', contato: '', saldo_haver: 0 });
       setActiveTab('lista');
       fetchData();
     }
@@ -40,12 +60,22 @@ export const Products: React.FC<{ isOlheiro: boolean }> = ({ isOlheiro }) => {
   const onSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!supabase) return;
+    if (!prodForm.fornecedor) return alert("Selecione um fornecedor!");
     if (products.some(p => p.sku === prodForm.sku)) return alert("Erro: SKU já cadastrado!");
     
-    const { error } = await supabase.from('produtos').insert([prodForm]);
+    // Mapeamento exato para a tabela 'produtos' do Supabase
+    const { error } = await supabase.from('produtos').insert([{
+      sku: prodForm.sku,
+      nome: prodForm.nome,
+      tipo: prodForm.tipo,
+      fornecedor: prodForm.fornecedor,
+      custo: prodForm.custo,
+      preco_venda: prodForm.preco_venda
+    }]);
+
     if (!handleSupabaseError(error)) {
       alert("Produto cadastrado com sucesso!");
-      setProdForm({ sku: '', nome: '', estoque_tipo: 'Físico', fornecedor_id: '', custo: 0, preco_venda: 0, quantidade: 0, min_estoque: 5 });
+      setProdForm({ sku: '', nome: '', tipo: 'Físico', fornecedor: '', custo: 0, preco_venda: 0 });
       setActiveTab('lista');
       fetchData();
     }
@@ -69,17 +99,11 @@ export const Products: React.FC<{ isOlheiro: boolean }> = ({ isOlheiro }) => {
         <form onSubmit={onSaveSupplier} className="nu-card space-y-6 max-w-xl mx-auto border-t-4 border-[#820AD1]">
           <h2 className="text-sm font-black uppercase tracking-widest flex items-center gap-2"><Users className="text-[#820AD1]" /> Novo Parceiro</h2>
           <div className="grid grid-cols-1 gap-4">
-            <input required placeholder="Nome Fantasia / Empresa" className="nu-input" value={supForm.nome_empresa} onChange={e => setSupForm({...supForm, nome_empresa: e.target.value})} />
-            <input placeholder="WhatsApp de Contato" className="nu-input" value={supForm.contato_whatsapp} onChange={e => setSupForm({...supForm, contato_whatsapp: e.target.value})} />
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <span className="text-[10px] font-bold text-[var(--text-muted)] ml-2">Saldo Haver (R$)</span>
-                <input type="number" step="0.01" className="nu-input" value={supForm.saldo_haver} onChange={e => setSupForm({...supForm, saldo_haver: Number(e.target.value)})} />
-              </div>
-              <div className="space-y-1">
-                <span className="text-[10px] font-bold text-[var(--text-muted)] ml-2">Prazo Médio (Dias)</span>
-                <input type="number" className="nu-input" value={supForm.prazo_entrega} onChange={e => setSupForm({...supForm, prazo_entrega: Number(e.target.value)})} />
-              </div>
+            <input required placeholder="Nome Fantasia / Empresa" className="nu-input" value={supForm.nome} onChange={e => setSupForm({...supForm, nome: e.target.value})} />
+            <input placeholder="WhatsApp de Contato" className="nu-input" value={supForm.contato} onChange={e => setSupForm({...supForm, contato: e.target.value})} />
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold text-[var(--text-muted)] ml-2">Saldo Haver (R$)</span>
+              <input type="number" step="0.01" className="nu-input" value={supForm.saldo_haver} onChange={e => setSupForm({...supForm, saldo_haver: Number(e.target.value)})} />
             </div>
           </div>
           <button type="submit" className="nu-button-primary w-full py-4 uppercase font-black tracking-widest shadow-lg shadow-[#820AD1]/20">Salvar Fornecedor</button>
@@ -88,25 +112,25 @@ export const Products: React.FC<{ isOlheiro: boolean }> = ({ isOlheiro }) => {
 
       {activeTab === 'produto' && (
         <form onSubmit={onSaveProduct} className="nu-card space-y-6 max-w-xl mx-auto border-t-4 border-[#820AD1]">
-          <h2 className="text-sm font-black uppercase tracking-widest flex items-center gap-2"><Package className="text-[#820AD1]" /> Novo SKU de Estoque</h2>
+          <h2 className="text-sm font-black uppercase tracking-widest flex items-center gap-2"><Package className="text-[#820AD1]" /> Novo SKU</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input required placeholder="SKU (Ex: MOD-01)" className="nu-input" value={prodForm.sku} onChange={e => setProdForm({...prodForm, sku: e.target.value})} />
             <input required placeholder="Nome do Produto" className="nu-input" value={prodForm.nome} onChange={e => setProdForm({...prodForm, nome: e.target.value})} />
-            <select className="nu-input" value={prodForm.estoque_tipo} onChange={e => setProdForm({...prodForm, estoque_tipo: e.target.value as any})}>
+            <select className="nu-input" value={prodForm.tipo} onChange={e => setProdForm({...prodForm, tipo: e.target.value as any})}>
               <option value="Físico">Estoque Físico</option>
               <option value="Virtual">Virtual (Dropshipping)</option>
             </select>
-            <select required className="nu-input font-bold" value={prodForm.fornecedor_id} onChange={e => setProdForm({...prodForm, fornecedor_id: e.target.value})}>
+            <select required className="nu-input font-bold" value={prodForm.fornecedor} onChange={e => setProdForm({...prodForm, fornecedor: e.target.value})}>
               <option value="">Selecionar Fornecedor...</option>
-              {suppliers.map(s => <option key={s.id} value={s.id}>{s.nome_empresa}</option>)}
+              {suppliers.map(s => <option key={s.id} value={s.nome}>{s.nome}</option>)}
             </select>
             <div className="space-y-1">
                <span className="text-[10px] font-bold text-[var(--text-muted)] ml-2">Custo (R$)</span>
-               <input required type="number" step="0.01" className="nu-input" onChange={e => setProdForm({...prodForm, custo: Number(e.target.value)})} />
+               <input required type="number" step="0.01" className="nu-input" value={prodForm.custo} onChange={e => setProdForm({...prodForm, custo: Number(e.target.value)})} />
             </div>
             <div className="space-y-1">
                <span className="text-[10px] font-bold text-[var(--text-muted)] ml-2">Venda (R$)</span>
-               <input required type="number" step="0.01" className="nu-input" onChange={e => setProdForm({...prodForm, preco_venda: Number(e.target.value)})} />
+               <input required type="number" step="0.01" className="nu-input" value={prodForm.preco_venda} onChange={e => setProdForm({...prodForm, preco_venda: Number(e.target.value)})} />
             </div>
           </div>
           <button type="submit" className="nu-button-primary w-full py-4 uppercase font-black tracking-widest shadow-lg shadow-[#820AD1]/20">Registrar Produto</button>
@@ -116,7 +140,7 @@ export const Products: React.FC<{ isOlheiro: boolean }> = ({ isOlheiro }) => {
       {activeTab === 'lista' && (
         <div className="nu-card !p-0 overflow-hidden">
           <div className="p-6 bg-[var(--bg-primary)] border-b border-[var(--border-color)]">
-            <h3 className="text-xs font-black uppercase tracking-widest">Base de Dados Real</h3>
+            <h3 className="text-xs font-black uppercase tracking-widest text-[#820AD1]">Base de Dados Supabase</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
@@ -129,31 +153,28 @@ export const Products: React.FC<{ isOlheiro: boolean }> = ({ isOlheiro }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border-color)]">
-                {products.map(p => {
-                  const sup = suppliers.find(s => s.id === p.fornecedor_id);
-                  return (
-                    <tr key={p.id} className="hover:bg-black/5 transition-colors">
-                      <td className="p-6">
-                        <p className="font-bold text-sm">{p.nome}</p>
-                        <p className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-tighter">{p.sku}</p>
-                      </td>
-                      <td className="p-6">
-                        <span className="text-[10px] font-bold bg-[var(--bg-primary)] px-3 py-1 rounded-full border border-[var(--border-color)]">
-                          {sup?.nome_empresa || 'N/A'}
-                        </span>
-                      </td>
-                      <td className="p-6">
-                         <p className={`text-xs font-bold ${isOlheiro ? 'blur-sm' : 'text-red-500'}`}>Custo: R$ {p.custo.toFixed(2)}</p>
-                         <p className={`text-sm font-black ${isOlheiro ? 'blur-sm' : 'text-[#03D56F]'}`}>Venda: R$ {p.preco_venda.toFixed(2)}</p>
-                      </td>
-                      <td className="p-6 text-right">
-                        <button onClick={() => deleteProduct(p.id)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-xl transition-all"><Trash2 size={16}/></button>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {products.map(p => (
+                  <tr key={p.id} className="hover:bg-black/5 transition-colors">
+                    <td className="p-6">
+                      <p className="font-bold text-sm">{p.nome}</p>
+                      <p className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-tighter">{p.sku}</p>
+                    </td>
+                    <td className="p-6">
+                      <span className="text-[10px] font-bold bg-[var(--bg-primary)] px-3 py-1 rounded-full border border-[var(--border-color)]">
+                        {p.fornecedor}
+                      </span>
+                    </td>
+                    <td className="p-6">
+                       <p className={`text-xs font-bold ${isOlheiro ? 'blur-sm' : 'text-red-500'}`}>Custo: R$ {p.custo.toFixed(2)}</p>
+                       <p className={`text-sm font-black ${isOlheiro ? 'blur-sm' : 'text-[#03D56F]'}`}>Venda: R$ {p.preco_venda.toFixed(2)}</p>
+                    </td>
+                    <td className="p-6 text-right">
+                      <button onClick={() => deleteProduct(p.id)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-xl transition-all"><Trash2 size={16}/></button>
+                    </td>
+                  </tr>
+                ))}
                 {products.length === 0 && !loading && (
-                  <tr><td colSpan={4} className="p-16 text-center italic text-[var(--text-muted)] text-sm">Nenhum registro encontrado no Supabase.</td></tr>
+                  <tr><td colSpan={4} className="p-16 text-center italic text-[var(--text-muted)] text-sm">Nenhum registro encontrado.</td></tr>
                 )}
               </tbody>
             </table>
