@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR" data-theme="dark">
 <head>
@@ -14,10 +15,10 @@
             --nu-error: #FF3131;
             --nu-info: #00E5FF;
             --fire-glow: linear-gradient(90deg, #820AD1, #61089b, #3e0563, #820AD1);
-            --transition-game: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-game: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        /* NIGHT OPERATIVE (TACTICAL DARK) */
+        /* TACTICAL DARK */
         [data-theme='dark'] {
             --bg-primary: #08080A; 
             --bg-card: #121214;    
@@ -26,26 +27,21 @@
             --text-main: #FFFFFF;
             --text-muted: #8E8E93;
             --border-color: rgba(130, 10, 209, 0.2);
-            --shadow-card: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.03);
-            --shadow-hover: 0 20px 50px rgba(0, 0, 0, 0.9), 0 0 0 2px var(--nu-purple);
-            --highlight-bg: #1C1C21;
-            --highlight-text: var(--nu-purple);
+            --shadow-card: 0 15px 45px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.03);
+            --shadow-hover: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 0 2px var(--nu-purple);
         }
 
-        /* DAWN PROTOCOL (SUNRISE LIGHT) - ROXO SUPREMO */
+        /* SUNRISE LIGHT */
         [data-theme='light'] {
-            --bg-primary: #FDFBFF; 
+            --bg-primary: #F0F2F5; 
             --bg-card: #FFFFFF;
             --bg-sidebar: #FFFFFF;
-            --bg-input: #F5F2FF;
+            --bg-input: #F8F9FA;
             --text-main: #1A0D2D; 
-            --text-muted: #7E748C;
-            --border-color: #E9E4F5;
-            --nu-purple: #820AD1; 
-            --shadow-card: 0 10px 30px rgba(130, 10, 209, 0.08), 0 2px 4px rgba(0, 0, 0, 0.02);
-            --shadow-hover: 0 15px 40px rgba(130, 10, 209, 0.15), 0 0 0 2px var(--nu-purple);
-            --highlight-bg: #F0EDFF;
-            --highlight-text: var(--nu-purple);
+            --text-muted: #64748B;
+            --border-color: #E2E8F0;
+            --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
+            --shadow-hover: 0 15px 35px rgba(130, 10, 209, 0.1), 0 0 0 2px var(--nu-purple);
         }
 
         body {
@@ -57,24 +53,58 @@
             width: 100vw;
             overflow: hidden;
             display: flex;
-            transition: background-color 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: background-color 0.6s ease;
             -webkit-font-smoothing: antialiased;
         }
 
+        /* EFEITO SCANLINE (HACKER) */
+        .scanline {
+            width: 100%;
+            height: 100px;
+            z-index: 9999;
+            background: linear-gradient(0deg, transparent 0%, rgba(130, 10, 209, 0.05) 50%, transparent 100%);
+            opacity: 0.1;
+            position: absolute;
+            pointer-events: none;
+            animation: scanline 8s linear infinite;
+        }
+
+        @keyframes scanline {
+            0% { top: -100px; }
+            100% { top: 100%; }
+        }
+
+        /* INTERAÇÃO BOTÕES */
+        button:active { transform: scale(0.95); }
         .nu-card {
             background-color: var(--bg-card);
             border: 1px solid var(--border-color);
-            border-radius: 24px;
+            border-radius: 32px;
             box-shadow: var(--shadow-card);
             transition: var(--transition-game);
-            position: relative;
-            z-index: 1;
         }
-
         .nu-card:hover {
-            transform: translateY(-8px);
+            transform: translateY(-5px);
             box-shadow: var(--shadow-hover);
         }
+
+        /* XP BAR ANIMATION */
+        .xp-bar-fire {
+            background: var(--fire-glow);
+            background-size: 200% auto;
+            animation: fireMove 2s linear infinite;
+            position: relative;
+        }
+        .xp-bar-fire::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes fireMove { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+        @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
 
         .btn-fire {
             background: var(--fire-glow);
@@ -84,77 +114,34 @@
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.1em;
-            border-radius: 16px;
-            padding: 14px 28px;
+            border-radius: 24px;
+            padding: 16px 32px;
             border: none;
             cursor: pointer;
             transition: var(--transition-game);
-            box-shadow: 0 8px 20px rgba(130, 10, 209, 0.3);
+            box-shadow: 0 10px 25px rgba(130, 10, 209, 0.3);
         }
-
-        .btn-fire:hover {
-            transform: scale(1.05) translateY(-2px);
-            filter: brightness(1.1);
-        }
-
-        .xp-bar-fire {
-            background: var(--fire-glow);
-            background-size: 200% auto;
-            animation: fireMove 2s linear infinite;
-        }
-
-        @keyframes fireMove {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 200% 50%; }
-        }
-
-        @keyframes spin-slow {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        .animate-spin-slow {
-            animation: spin-slow 12s linear infinite;
-        }
+        .btn-fire:hover { transform: scale(1.02) translateY(-2px); filter: brightness(1.1); }
 
         .nu-input {
             background-color: var(--bg-input);
             border: 1px solid var(--border-color);
             color: var(--text-main);
-            border-radius: 16px;
-            padding: 14px 20px;
-            font-size: 0.875rem;
+            border-radius: 22px;
+            padding: 18px 26px;
             transition: var(--transition-game);
         }
+        .nu-input:focus { outline: none; border-color: var(--nu-purple); box-shadow: 0 0 0 6px rgba(130, 10, 209, 0.1); }
 
-        .nu-input:focus {
-            outline: none;
-            border-color: var(--nu-purple);
-            box-shadow: 0 0 0 4px rgba(130, 10, 209, 0.15);
-        }
+        .nu-scrollbar::-webkit-scrollbar { width: 8px; }
+        .nu-scrollbar::-webkit-scrollbar-thumb { background: var(--nu-purple); border-radius: 10px; border: 2px solid var(--bg-primary); }
 
-        .nu-scrollbar::-webkit-scrollbar { width: 6px; }
-        .nu-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .nu-scrollbar::-webkit-scrollbar-thumb { background: var(--nu-purple); border-radius: 10px; }
+        .safe-bottom-padding { padding-bottom: 200px; }
+        @media (min-width: 1024px) { .safe-bottom-padding { padding-bottom: 100px; } }
 
-        .safe-bottom-padding { padding-bottom: 160px; }
-        @media (min-width: 1024px) {
-            .safe-bottom-padding { padding-bottom: 60px; }
-        }
-
-        .glass-modal {
-            background: var(--bg-card);
-            backdrop-filter: blur(25px);
-            border: 1px solid var(--border-color);
-            box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.6);
-        }
-
-        .ghost-active .ghost-blur {
-            filter: blur(12px);
-            pointer-events: none;
-            user-select: none;
-            opacity: 0.4;
-        }
+        /* LOADING SPINNER SUPREMO */
+        .loading-pulse { animation: pulse-shadow 2s infinite; }
+        @keyframes pulse-shadow { 0% { box-shadow: 0 0 0 0 rgba(130, 10, 209, 0.4); } 70% { box-shadow: 0 0 0 20px rgba(130, 10, 209, 0); } 100% { box-shadow: 0 0 0 0 rgba(130, 10, 209, 0); } }
     </style>
 <script type="importmap">
 {
@@ -166,16 +153,17 @@
     "lucide-react": "https://esm.sh/lucide-react@0.475.0?external=react",
     "framer-motion": "https://esm.sh/framer-motion@12.24.10?external=react,react-dom",
     "recharts": "https://esm.sh/recharts@2.15.0?external=react,react-dom",
-    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.48.0",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/"
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.90.1"
   }
 }
 </script>
 </head>
 <body class="fixed inset-0 overflow-hidden select-none">
+    <div class="scanline"></div>
     <div id="root" class="w-full h-full"></div>
-    <div id="toasts" class="fixed top-24 right-8 z-[10000] flex flex-col gap-3 pointer-events-none"></div>
+    <div id="toasts" class="fixed top-28 right-10 z-[10000] flex flex-col gap-4 pointer-events-none"></div>
     <script type="module" src="index.tsx"></script>
 </body>
 </html>

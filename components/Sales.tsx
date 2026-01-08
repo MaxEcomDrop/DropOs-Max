@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  Plus, Trash2, ShoppingCart, Zap, Award, Crosshair
+  Plus, Trash2, ShoppingCart, Zap, Award, Crosshair, ArrowDown, ArrowUp, Calendar
 } from 'lucide-react';
 import { storage, notificar } from '../lib/storage';
 import { Produto, Venda, CanalVenda } from '../types';
@@ -13,224 +14,188 @@ export const Sales: React.FC<{ isOlheiro: boolean }> = ({ isOlheiro }) => {
   const [successOverlay, setSuccessOverlay] = useState(false);
   const [form, setForm] = useState({ 
     produto_id: '', canal: 'TikTok' as CanalVenda, valor_venda_un: 0, 
-    valor_liquido_recebido: 0, qtd: 1, ads_cost: 0
+    valor_liquido_recebido: 0, qtd: 1, ads_cost: 0, data: new Date().toISOString().split('T')[0]
   });
 
+  const config = storage.configuracoes.obter();
+
   useEffect(() => {
-    // Fix: Removed unused arguments to match storage.produtos.obterTodos and storage.vendas.obterTodas signatures
-    setProducts(storage.produtos.obterTodos());
-    setSales(storage.vendas.obterTodas());
+    const load = () => {
+      setProducts(storage.produtos.obterTodos());
+      setSales(storage.vendas.obterTodas());
+    };
+    load();
+    window.addEventListener('storage-update', load);
+    return () => window.removeEventListener('storage-update', load);
   }, []);
 
   const selectedProd = products.find(p => p.id === form.produto_id);
   
   const stats = useMemo(() => {
-    const bruto = form.valor_venda_un * form.qtd;
-    const custo = (selectedProd?.custo_fornecedor || 0) * form.qtd;
-    const lucro = form.valor_liquido_recebido - custo - form.ads_cost;
-    const margem = bruto > 0 ? (lucro / bruto) * 100 : 0;
-    return { bruto, custo, margem, lucro };
-  }, [form, selectedProd]);
+    const bruto = Math.max(0, (form.valor_venda_un || 0) * (form.qtd || 1));
+    const taxasPlataforma = Math.max(0, bruto - (form.valor_liquido_recebido || 0));
+    const custoProd = Math.max(0, (selectedProd?.custo_fornecedor || 0) * (form.qtd || 1));
+    const lucroOp = Math.max(0, (form.valor_liquido_recebido || 0) - custoProd - (form.ads_cost || 0));
+    const comissao = (lucroOp * (config.financeiro.porcentagemFuncionario || 0)) / 100;
+    const lucroReal = Math.max(0, lucroOp - comissao);
+    
+    return { bruto, taxasPlataforma, custoProd, comissao, lucroReal };
+  }, [form, selectedProd, config]);
 
   const save = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.produto_id) return notificar("Produto não selecionado");
+    if (!form.produto_id) return notificar("Erro: Selecione um item");
     
     storage.vendas.salvar({
-      data_venda: new Date().toISOString(),
+      data_venda: form.data,
       canal: form.canal,
-      cliente: 'Cliente Ecommerce',
+      cliente: 'Operação Local',
       produto_id: form.produto_id,
       produto_nome: selectedProd?.nome || '',
       quantidade: form.qtd,
       valor_venda_un: form.valor_venda_un,
-      faturamento_bruto: stats.bruto,
       valor_liquido_recebido: form.valor_liquido_recebido,
-      custo_mercadoria_total: stats.custo,
-      lucro_real: stats.lucro,
+      custo_mercadoria_total: stats.custoProd,
       custo_ads: form.ads_cost,
       status: 'Entregue'
     });
 
     setSuccessOverlay(true);
-    setTimeout(() => setSuccessOverlay(false), 2500);
-
-    notificar("Pedido Confirmado [+250 XP]");
-    setSales(storage.vendas.obterTodas());
+    setTimeout(() => setSuccessOverlay(false), 2000);
     setActiveTab('historico');
-    setForm({ produto_id: '', canal: 'TikTok', valor_venda_un: 0, valor_liquido_recebido: 0, qtd: 1, ads_cost: 0 });
-    window.dispatchEvent(new Event('storage-update'));
+    setForm({ produto_id: '', canal: 'TikTok', valor_venda_un: 0, valor_liquido_recebido: 0, qtd: 1, ads_cost: 0, data: new Date().toISOString().split('T')[0] });
   };
 
-  const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const fmt = (v?: number | null) => {
+    if (isOlheiro) return 'R$ ****';
+    const val = Number(v ?? 0);
+    return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  };
 
   return (
-    <div className="flex flex-col gap-6 md:gap-10 pb-20 page-container">
+    <div className="flex flex-col gap-10 pb-32 text-left">
       <AnimatePresence>
         {successOverlay && (
-          <motion.div 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 backdrop-blur-md pointer-events-none"
-          >
-             <motion.div 
-               initial={{ scale: 0.2, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-               className="flex flex-col items-center p-10 md:p-20 rounded-[30px] md:rounded-[50px] bg-[var(--bg-card)] border-4 border-[var(--nu-success)] shadow-[0_0_100px_rgba(0,255,156,0.2)]"
-             >
-                <div className="p-6 md:p-10 bg-[var(--nu-success)]/10 text-[var(--nu-success)] rounded-full mb-6 md:mb-10">
-                   <Crosshair strokeWidth={3} className="animate-spin-slow w-[60px] h-[60px] md:w-[100px] md:h-[100px]" />
-                </div>
-                <h2 className="text-3xl md:text-7xl font-black italic uppercase text-[var(--nu-success)] tracking-tighter text-center">PEDIDO CONFIRMADO</h2>
-                <p className="text-sm md:text-2xl font-black text-[var(--text-muted)] uppercase tracking-[0.3em] md:tracking-[0.5em] mt-4 md:mt-8">+250 XP COLETADO</p>
-             </motion.div>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-md pointer-events-none">
+             <div className="flex flex-col items-center p-16 rounded-[60px] bg-[var(--bg-card)] border-8 border-[var(--nu-success)] shadow-[0_0_100px_rgba(0,255,156,0.4)]">
+                <Crosshair strokeWidth={3} className="animate-spin-slow w-20 h-20 text-[var(--nu-success)] mb-8" />
+                <h2 className="text-4xl font-black italic uppercase text-[var(--nu-success)] tracking-tighter">OPERADO COM SUCESSO</h2>
+             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="flex bg-[var(--bg-input)] p-1.5 rounded-2xl w-full md:w-fit border border-[var(--border-color)]">
+      <div className="flex bg-[var(--bg-input)] p-2 rounded-[24px] w-fit border border-[var(--border-color)] shadow-sm">
         {['nova', 'historico'].map(t => (
-          <button key={t} onClick={() => setActiveTab(t as any)} className={`flex-1 md:flex-none px-6 md:px-12 py-3 rounded-xl text-[9px] md:text-[11px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${activeTab === t ? 'bg-[var(--nu-purple)] text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
-            {t === 'nova' ? 'NOVO PEDIDO' : 'HISTÓRICO DE VENDAS'}
+          <button key={t} onClick={() => setActiveTab(t as any)} className={`px-12 py-4 rounded-[18px] text-[11px] font-black uppercase tracking-[0.2em] transition-all ${activeTab === t ? 'bg-[var(--nu-purple)] text-white shadow-xl scale-105' : 'text-[var(--text-muted)] hover:bg-[var(--nu-purple)]/5'}`}>
+            {t === 'nova' ? 'REGISTRAR OPERAÇÃO' : 'VER HISTÓRICO'}
           </button>
         ))}
       </div>
 
       {activeTab === 'nova' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-10 text-left">
-          <motion.form 
-            initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
-            onSubmit={save} 
-            className="lg:col-span-2 nu-card p-6 md:p-12 space-y-8 md:space-y-12"
-          >
-             <div className="flex flex-col">
-                <h3 className="text-xl md:text-2xl font-black italic uppercase tracking-tighter flex items-center gap-5">
-                  <ShoppingCart size={28} className="text-[var(--nu-purple)]" /> REGISTRO DE VENDAS
-                </h3>
-                <span className="text-[8px] md:text-[10px] font-bold text-[var(--text-muted)] uppercase mt-2 tracking-[0.4em]">Entrada Manual de Pedidos Offline</span>
-             </div>
-
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
-                <div className="space-y-3 md:space-y-4 text-left">
-                  <label className="text-[9px] md:text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em] ml-2">Escolha o Produto</label>
-                  <select required className="nu-input w-full font-bold" value={form.produto_id} onChange={e=>setForm({...form, produto_id: e.target.value})}>
-                    <option value="">SELECIONE NO ARSENAL...</option>
-                    {products.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+          <form onSubmit={save} className="lg:col-span-2 nu-card p-12 space-y-12 shadow-2xl">
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div className="space-y-4">
+                  <label className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em] ml-2">Arsenal (Equipamento)</label>
+                  <select required className="nu-input w-full font-bold text-base" value={form.produto_id} onChange={e=>setForm({...form, produto_id: e.target.value})}>
+                    <option value="">AGUARDANDO SELEÇÃO...</option>
+                    {products.map(p => <option key={p.id} value={p.id}>{isOlheiro ? 'PRODUTO OFUSCADO' : p.nome} ({fmt(p.custo_fornecedor)})</option>)}
                   </select>
                 </div>
-                <div className="space-y-3 md:space-y-4 text-left">
-                  <label className="text-[9px] md:text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em] ml-2">Canal de Venda</label>
-                  <select className="nu-input w-full font-bold" value={form.canal} onChange={e=>setForm({...form, canal: e.target.value as any})}>
-                    <option>TikTok</option><option>Mercado Livre</option><option>Shopee</option><option>WhatsApp</option><option>Instagram</option>
+                <div className="space-y-4">
+                  <label className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em] ml-2">Cadeia Logística</label>
+                  <select className="nu-input w-full font-bold text-base" value={form.canal} onChange={e=>setForm({...form, canal: e.target.value as any})}>
+                    <option>TikTok</option><option>Mercado Livre</option><option>Shopee</option><option>WhatsApp</option><option>Site Próprio</option>
                   </select>
                 </div>
              </div>
 
-             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
-                <div className="space-y-2 md:space-y-3">
-                   <label className="text-[8px] md:text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">QTD</label>
-                   <input type="number" className="nu-input w-full font-black text-center" value={form.qtd} onChange={e=>setForm({...form, qtd: Number(e.target.value)})} />
+             <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
+                <div className="space-y-3">
+                   <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Qtd Operada</label>
+                   <input type="number" min="1" className="nu-input w-full font-black text-center text-lg" value={form.qtd} onChange={e=>setForm({...form, qtd: Math.max(1, Number(e.target.value))})} />
                 </div>
-                <div className="space-y-2 md:space-y-3">
-                   <label className="text-[8px] md:text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">VALOR UN.</label>
-                   <input type="number" step="0.01" className="nu-input w-full font-bold" value={form.valor_venda_un || ''} onChange={e=>setForm({...form, valor_venda_un: Number(e.target.value)})} />
+                <div className="space-y-3">
+                   <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Venda Unitária</label>
+                   <input type="number" step="0.01" min="0" className="nu-input w-full font-bold text-lg" value={form.valor_venda_un || ''} onChange={e=>setForm({...form, valor_venda_un: Number(e.target.value)})} placeholder="0,00" />
                 </div>
-                <div className="space-y-2 md:space-y-3">
-                   <label className="text-[8px] md:text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">RECEBIDO</label>
-                   <input type="number" step="0.01" className="nu-input w-full font-bold" value={form.valor_liquido_recebido || ''} onChange={e=>setForm({...form, valor_liquido_recebido: Number(e.target.value)})} />
+                <div className="space-y-3">
+                   <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Saldo Líquido</label>
+                   <input type="number" step="0.01" min="0" className="nu-input w-full font-bold text-lg" value={form.valor_liquido_recebido || ''} onChange={e=>setForm({...form, valor_liquido_recebido: Number(e.target.value)})} placeholder="0,00" />
                 </div>
-                <div className="space-y-2 md:space-y-3">
-                   <label className="text-[8px] md:text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">CUSTO ADS</label>
-                   <input type="number" step="0.01" className="nu-input w-full font-bold" value={form.ads_cost || ''} onChange={e=>setForm({...form, ads_cost: Number(e.target.value)})} />
+                <div className="space-y-3">
+                   <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Invest. Marketing</label>
+                   <input type="number" step="0.01" min="0" className="nu-input w-full font-bold text-lg" value={form.ads_cost || ''} onChange={e=>setForm({...form, ads_cost: Number(e.target.value)})} placeholder="0,00" />
+                </div>
+                <div className="space-y-3">
+                   <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest ml-1">Data da Ordem</label>
+                   <input type="date" className="nu-input w-full font-black text-center" value={form.data} onChange={e=>setForm({...form, data: e.target.value})} />
                 </div>
              </div>
+             <button type="submit" className="btn-fire w-full py-8 text-lg">FINALIZAR LANÇAMENTO NO COFRE</button>
+          </form>
 
-             <button type="submit" className="btn-fire w-full italic text-xs md:text-sm">
-               CONFIRMAR VENDA E PEDIDO
-             </button>
-          </motion.form>
+          {/* CARD DE LUCRO REAL - REESTRUTURADO E MELHORADO PARA DAY MODE */}
+          <div className="nu-card p-12 bg-gradient-to-br from-[var(--bg-input)] to-[var(--bg-card)] border-2 border-[var(--nu-purple)]/20 text-center shadow-2xl relative overflow-hidden flex flex-col justify-between">
+             <div className="absolute top-0 left-0 w-full h-2 bg-[var(--nu-purple)]"></div>
+             
+             <div>
+                <p className="text-[12px] font-black uppercase text-[var(--text-muted)] mb-4 tracking-[0.4em] opacity-80">RESULTADO LÍQUIDO DA ORDEM</p>
+                <motion.h4 
+                  key={stats.lucroReal} initial={{ scale: 0.8 }} animate={{ scale: 1 }}
+                  className={`text-6xl font-black italic tracking-tighter ${stats.lucroReal > 0 ? 'text-[var(--nu-success)]' : 'text-red-500'}`}
+                >
+                  {fmt(stats.lucroReal)}
+                </motion.h4>
+             </div>
+             
+             <div className="mt-16 space-y-5 text-[12px] font-black uppercase tracking-[0.2em]">
+                <div className="flex justify-between pb-4 border-b border-[var(--border-color)] text-[var(--text-main)]"><span className="opacity-50">FATURAMENTO</span><span>{fmt(stats.bruto)}</span></div>
+                <div className="flex justify-between pb-4 border-b border-[var(--border-color)] text-red-500/90"><span className="opacity-50">CUSTO ITEM</span><span>-{fmt(stats.custoProd)}</span></div>
+                <div className="flex justify-between pb-4 border-b border-[var(--border-color)] text-orange-500/90"><span className="opacity-50">TAXAS PLAT.</span><span>-{fmt(stats.taxasPlataforma)}</span></div>
+                <div className="flex justify-between pb-4 border-b border-[var(--border-color)] text-blue-500/90"><span className="opacity-50">COMISSÕES</span><span>-{fmt(stats.comissao)}</span></div>
+             </div>
 
-          <div className="flex flex-col gap-6 md:gap-8">
-            <div className="nu-card p-6 md:p-10 flex flex-col justify-between min-h-[350px] md:h-[460px] relative overflow-hidden bg-gradient-to-br from-[var(--nu-purple)] to-[#4B0082]">
-               <div className="absolute top-0 right-0 p-8 opacity-10 scale-150 rotate-12">
-                  <Crosshair size={140} />
-               </div>
-               
-               <div className="text-center z-10 pt-4">
-                  <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.5em] mb-6 md:mb-10 opacity-60 italic text-white">LUCRO DA OPERAÇÃO</p>
-                  <h4 className={`text-4xl md:text-6xl font-black italic tracking-tighter mb-6 md:mb-10 text-white ${isOlheiro ? 'blur-md' : ''}`}>
-                    {fmt(stats.lucro)}
-                  </h4>
-                  <div className={`inline-flex items-center gap-3 md:gap-4 px-6 md:px-8 py-2 md:py-3 rounded-full border-2 border-white/40 bg-white/10 text-white`}>
-                    <Zap size={18} className="fill-current" />
-                    <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.2em]">{stats.margem.toFixed(1)}% MARGEM</span>
-                  </div>
-               </div>
-               
-               <div className="space-y-4 md:space-y-6 pb-4 z-10 text-white/80">
-                  <div className="flex justify-between items-center text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] border-b border-white/10 pb-2">
-                    <span className="italic">Total do Pedido</span>
-                    <span className="font-bold">{fmt(stats.bruto)}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] border-b border-white/10 pb-2">
-                    <span className="italic">Custo de Produto</span>
-                    <span className="font-bold text-red-300">-{fmt(stats.custo)}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] border-b border-white/10 pb-2">
-                    <span className="italic">Investimento Ads</span>
-                    <span className="font-bold text-blue-300">-{fmt(form.ads_cost)}</span>
-                  </div>
-               </div>
-            </div>
-
-            <div className="nu-card p-6 md:p-8 bg-[var(--nu-purple)]/5 border-2 border-[var(--nu-purple)]/20 text-left">
-               <div className="flex items-center gap-4 md:gap-5">
-                  <Award size={32} className="text-[var(--nu-purple)]" />
-                  <div>
-                    <p className="text-[9px] md:text-[10px] font-black text-[var(--text-main)] uppercase tracking-[0.3em]">RECOMPENSA DE OPERADOR</p>
-                    <p className="text-[8px] md:text-[9px] font-bold text-[var(--text-muted)] uppercase mt-1">Vendas confirmadas geram +250 EXP no sistema.</p>
-                  </div>
-               </div>
-            </div>
+             <div className="mt-10 p-4 bg-[var(--nu-purple)]/10 rounded-2xl border border-[var(--nu-purple)]/20">
+                <p className="text-[9px] font-bold text-[var(--nu-purple)] uppercase tracking-[0.3em]">Eficiência da Operação: {stats.bruto > 0 ? ((stats.lucroReal / stats.bruto) * 100).toFixed(1) : 0}%</p>
+             </div>
           </div>
         </div>
       )}
 
       {activeTab === 'historico' && (
-        <div className="nu-card overflow-hidden">
-          <div className="overflow-x-auto nu-scrollbar">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="text-[9px] md:text-[10px] font-black uppercase bg-[var(--highlight-bg)] text-[var(--highlight-text)]">
-                  <th className="px-6 md:px-10 py-5 md:py-7">PEDIDO / PRODUTO</th>
-                  <th className="px-6 md:px-10 py-5 md:py-7 text-right">VALOR RECEBIDO</th>
-                  <th className="px-6 md:px-10 py-5 md:py-7 text-right">LUCRO LÍQUIDO</th>
-                  <th className="px-6 md:px-10 py-5 md:py-7 text-center">AÇÕES</th>
+        <div className="nu-card overflow-hidden shadow-2xl border-[var(--border-color)]">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-[var(--bg-input)] text-[11px] font-black uppercase text-[var(--text-muted)] tracking-widest">
+                <th className="px-10 py-8">OPERADOR / ITEM</th>
+                <th className="px-10 py-8 text-right">FATM. BRUTO</th>
+                <th className="px-10 py-8 text-right">LÍQUIDO CONTA</th>
+                <th className="px-10 py-8 text-right">LUCRO REAL</th>
+                <th className="px-10 py-8 text-center">AÇÕES</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--border-color)]">
+              {sales.length === 0 ? (
+                <tr><td colSpan={5} className="py-24 text-center text-[13px] font-black uppercase opacity-20 italic tracking-[0.5em]">Aguardando transmissão de dados operacional...</td></tr>
+              ) : [...sales].reverse().map(s => (
+                <tr key={s.id} className="hover:bg-[var(--nu-purple)]/5 transition-all group">
+                  <td className="px-10 py-8">
+                    <p className="text-sm font-black italic uppercase text-[var(--text-main)] tracking-tighter">{isOlheiro ? 'HIDDEN-PROD' : s.produto_nome}</p>
+                    <p className="text-[10px] font-bold text-[var(--nu-purple)] mt-2 uppercase tracking-widest">{s.canal} • {new Date(s.data_venda).toLocaleDateString()}</p>
+                  </td>
+                  <td className="px-10 py-8 text-right text-sm font-bold text-[var(--text-muted)]">{fmt(s.faturamento_bruto)}</td>
+                  <td className="px-10 py-8 text-right text-sm font-bold text-[var(--text-muted)]/80">{fmt(s.valor_liquido_recebido)}</td>
+                  <td className={`px-10 py-8 text-right font-black italic text-lg ${s.lucro_real > 0 ? 'text-[var(--nu-success)]' : 'text-red-400'}`}>{fmt(s.lucro_real)}</td>
+                  <td className="px-10 py-8 text-center">
+                    <button onClick={() => { if(confirm('Eliminar registro permanentemente?')) storage.vendas.excluir(s.id); }} className="p-3 text-red-500/20 group-hover:text-red-500 hover:bg-red-500/10 rounded-2xl transition-all"><Trash2 size={20}/></button>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--border-color)]">
-                {sales.length === 0 ? (
-                  <tr><td colSpan={4} className="py-20 md:py-40 text-center text-[10px] md:text-[11px] font-black uppercase opacity-20 italic tracking-[0.5em]">Sem pedidos no momento</td></tr>
-                ) : [...sales].reverse().map(s => (
-                  <tr key={s.id} className="hover:bg-[var(--bg-input)] transition-all">
-                    <td className="px-6 md:px-10 py-6 md:py-8 text-left">
-                       <p className="text-xs md:text-sm font-black text-[var(--text-main)] uppercase italic">{s.produto_nome}</p>
-                       <p className="text-[8px] md:text-[9px] font-black text-[var(--nu-purple)] uppercase tracking-widest mt-1">{s.canal}</p>
-                    </td>
-                    <td className="px-6 md:px-10 py-6 md:py-8 text-right text-[10px] md:text-xs font-bold text-[var(--text-muted)] tabular-nums">
-                      {isOlheiro ? '******' : fmt(s.valor_liquido_recebido)}
-                    </td>
-                    <td className={`px-6 md:px-10 py-6 md:py-8 text-right font-black italic text-base md:text-lg tabular-nums ${s.lucro_real >= 0 ? 'text-[var(--nu-success)]' : 'text-[var(--nu-error)]'}`}>
-                      {isOlheiro ? '******' : fmt(s.lucro_real)}
-                    </td>
-                    <td className="px-6 md:px-10 py-6 md:py-8 text-center">
-                      <button onClick={() => { if(confirm('Remover registro de venda?')) storage.vendas.excluir(s.id); }} className="p-3 md:p-4 text-[var(--nu-error)]/40 hover:text-[var(--nu-error)] hover:bg-[var(--nu-error)]/10 rounded-2xl transition-all">
-                        <Trash2 size={20} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

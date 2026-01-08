@@ -1,21 +1,20 @@
 
 export type CanalVenda = 'Mercado Livre' | 'Shopee' | 'WhatsApp' | 'Site Próprio' | 'Instagram' | 'TikTok' | 'Facebook Ads' | 'Google Ads' | 'Taboola';
 export type TipoTransacao = 'Receita' | 'Despesa' | 'Investimento';
-export type CategoriaFinanceira = 'Vendas' | 'CMV' | 'Marketing' | 'Impostos' | 'Operacional' | 'Comissões' | 'Software' | 'Reserva' | 'Outros';
+export type CategoriaFinanceira = 'Vendas' | 'CMV' | 'Marketing' | 'Impostos' | 'Operacional' | 'Comissões' | 'Software' | 'Reserva' | 'Fixo' | 'Variável' | 'Outros';
 export type FrequenciaMissao = 'Diária' | 'Semanal' | 'Mensal' | 'Livre';
 export type RaridadeProduto = 'Comum' | 'Raro' | 'Épico' | 'Lendário';
 export type RegimeTributario = 'MEI' | 'Simples Nacional' | 'CPF';
 export type ModoVisual = 'normal' | 'rico' | 'milionario';
 export type TemaSistema = 'dark' | 'light';
+export type PrioridadeMissao = 'Baixa' | 'Média' | 'Alta' | 'Crítica';
 
-// Fix: Added Skill interface to resolve error in lib/storage.ts
 export interface Skill {
   id: string;
   nome: string;
   nivel: number;
 }
 
-// Fix: Added EstatisticasUsuario interface to resolve errors in App.tsx and lib/storage.ts
 export interface EstatisticasUsuario {
   nivel: number;
   experiencia: number;
@@ -36,7 +35,8 @@ export interface Missao {
   frequencia: FrequenciaMissao;
   completa: boolean;
   categoria: string;
-  isCustom?: boolean;
+  prioridade: PrioridadeMissao;
+  data_alvo: string;
 }
 
 export interface LancamentoFinanceiro {
@@ -47,6 +47,7 @@ export interface LancamentoFinanceiro {
   categoria: CategoriaFinanceira;
   data: string;
   status: 'Pendente' | 'Pago';
+  is_fixo?: boolean;
   venda_id?: string;
 }
 
@@ -57,9 +58,6 @@ export interface Produto {
   custo_fornecedor: number;
   preco_venda_alvo: number;
   raridade: RaridadeProduto;
-  // Fix: Added properties used in components/Products.tsx
-  fornecedor_nome?: string;
-  isZumbi?: boolean;
 }
 
 export interface Venda {
@@ -69,11 +67,11 @@ export interface Venda {
   produto_nome: string;
   faturamento_bruto: number;
   valor_liquido_recebido: number;
+  taxas_plataforma: number;
   custo_mercadoria_total: number;
   lucro_real: number;
   custo_ads: number;
   comissao_paga?: number;
-  // Fix: Added properties to resolve error in components/Sales.tsx
   cliente: string;
   produto_id: string;
   quantidade: number;
@@ -95,7 +93,7 @@ export interface ConfiguracoesApp {
     valorDasMensal: number;
     reservaEmergencia: number;
     porcentagemSocio: number;
-    porcentagemFuncionario: number; // Nova mecânica de comissão
+    porcentagemFuncionario: number;
   };
   pomodoroTime: number;
 }

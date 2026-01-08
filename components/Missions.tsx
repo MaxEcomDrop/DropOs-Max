@@ -1,91 +1,99 @@
 
 import React, { useState, useEffect } from 'react';
-import { Trophy, Zap, CheckCircle2, Plus, Trash2, Target } from 'lucide-react';
+import { Trophy, CheckCircle2, Plus, Trash2, ShieldAlert, Calendar } from 'lucide-react';
 import { storage, notificar } from '../lib/storage';
-import { Missao } from '../types';
+import { Missao, PrioridadeMissao } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const Missions: React.FC = () => {
   const [missoes, setMissoes] = useState<Missao[]>([]);
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ titulo: '', recompensa: 500, objetivo: 1 });
+  const [form, setForm] = useState({ titulo: '', prioridade: 'Média' as PrioridadeMissao, data: new Date().toISOString().split('T')[0] });
 
   useEffect(() => {
-    setMissoes(storage.missoes.obterTodas());
-    window.addEventListener('storage-update', () => setMissoes(storage.missoes.obterTodas()));
+    const load = () => setMissoes(storage.missoes.obterTodas());
+    load();
+    window.addEventListener('storage-update', load);
+    return () => window.removeEventListener('storage-update', load);
   }, []);
 
   const addMission = (e: React.FormEvent) => {
     e.preventDefault();
-    storage.missoes.salvar({ ...form, progresso: 0, frequencia: 'Livre', categoria: 'Geral', isCustom: true });
-    notificar("Nova Missão Tática Designada");
+    if (!form.titulo) return;
+    storage.missoes.salvar(form.titulo, form.prioridade, form.data);
+    notificar("Missão Designada com Sucesso");
     setShowAdd(false);
-    setForm({ titulo: '', recompensa: 500, objetivo: 1 });
+    setForm({ titulo: '', prioridade: 'Média', data: new Date().toISOString().split('T')[0] });
   };
 
   return (
     <div className="flex flex-col gap-10 pb-40 text-left">
       <div className="flex justify-between items-center">
          <div>
-            <h2 className="text-3xl font-black italic uppercase tracking-tighter">Objetivos do Comando</h2>
-            <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.4em]">Gerencie suas metas e ganhe recompensa em XP</p>
+            <h2 className="text-3xl font-black italic uppercase tracking-tighter">Missões do CEO</h2>
+            <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.4em]">Acumule XP para evoluir sua Patente Operacional</p>
          </div>
          <button onClick={() => setShowAdd(true)} className="btn-fire !py-3 !px-8 flex items-center gap-3">
-            <Plus size={18} /> NOVA META
+            <Plus size={18} /> DESIGNAR MISSÃO
          </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
          <AnimatePresence>
-            {missoes.map((m, i) => (
+            {missoes.map((m) => (
               <motion.div 
-                key={m.id} initial={{opacity:0, scale:0.9}} animate={{opacity:1, scale:1}} exit={{opacity:0}}
+                key={m.id} initial={{opacity:0, scale:0.95}} animate={{opacity:1, scale:1}} exit={{opacity:0}}
                 className={`nu-card p-8 flex flex-col gap-6 relative overflow-hidden transition-all ${m.completa ? 'border-[var(--nu-success)] bg-[var(--nu-success)]/5' : 'hover:border-[var(--nu-purple)]'}`}
               >
                  <div className="flex items-center justify-between">
                     <div className={`p-4 rounded-2xl ${m.completa ? 'bg-[var(--nu-success)]' : 'bg-[var(--nu-purple)]'} text-white`}>
-                       <Trophy size={24} />
+                       <Trophy size={20} />
                     </div>
-                    {!m.completa ? (
-                      <button onClick={() => storage.missoes.concluir(m.id)} className="text-[9px] font-black uppercase text-[var(--nu-purple)] bg-[var(--nu-purple)]/10 px-4 py-2 rounded-full hover:bg-[var(--nu-purple)] hover:text-white transition-all">CONCLUIR</button>
-                    ) : (
-                      <CheckCircle2 size={24} className="text-[var(--nu-success)]" />
-                    )}
+                    <span className={`text-[8px] font-black uppercase px-2 py-1 rounded bg-black/20`}>{m.prioridade}</span>
                  </div>
 
                  <div>
-                    <h4 className="text-lg font-black uppercase italic tracking-tight">{m.titulo}</h4>
-                    <span className="text-[9px] font-black text-[var(--nu-purple)] uppercase mt-1">+{m.recompensa} XP</span>
+                    <h4 className="text-sm font-black uppercase italic leading-tight">{m.titulo}</h4>
+                    <div className="flex items-center gap-2 mt-3 text-[9px] font-black text-[var(--text-muted)] uppercase opacity-60">
+                       <Calendar size={12} /> Prazo: {new Date(m.data_alvo).toLocaleDateString()}
+                    </div>
+                    <span className="text-[10px] font-black text-[var(--nu-purple)] uppercase mt-4 block">RECOMPENSA: {m.recompensa} XP</span>
                  </div>
 
-                 <button onClick={() => storage.missoes.excluir(m.id)} className="absolute bottom-4 right-4 text-[var(--nu-error)] opacity-20 hover:opacity-100 transition-all p-2">
-                    <Trash2 size={16} />
-                 </button>
+                 <div className="flex gap-4 mt-2">
+                    {!m.completa ? (
+                      <button onClick={() => storage.missoes.concluir(m.id)} className="flex-1 py-3 bg-[var(--nu-purple)] text-white text-[10px] font-black uppercase rounded-xl">CONCLUIR</button>
+                    ) : (
+                      <div className="flex-1 py-3 bg-[var(--nu-success)]/10 text-[var(--nu-success)] text-[10px] font-black uppercase rounded-xl flex items-center justify-center gap-2 border border-[var(--nu-success)]/20">
+                         <CheckCircle2 size={14} /> FINALIZADA
+                      </div>
+                    )}
+                    <button onClick={() => storage.missoes.excluir(m.id)} className="p-3 bg-white/5 text-red-500/20 hover:text-red-500 rounded-xl transition-all"><Trash2 size={18} /></button>
+                 </div>
               </motion.div>
             ))}
          </AnimatePresence>
       </div>
 
       {showAdd && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md">
            <motion.form 
             initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
             onSubmit={addMission} className="nu-card w-full max-w-lg p-10 space-y-8"
            >
-              <h3 className="text-2xl font-black uppercase italic tracking-tighter">Cadastrar Nova Meta</h3>
-              <div className="space-y-4">
-                 <div className="flex flex-col gap-2">
-                    <label className="text-[10px] font-black uppercase text-[var(--text-muted)]">Título da Missão / Objetivo</label>
-                    <input required className="nu-input w-full font-bold" value={form.titulo} onChange={e=>setForm({...form, titulo: e.target.value})} placeholder="Ex: Finalizar estoque de Inverno" />
-                 </div>
-                 <div className="flex flex-col gap-2">
-                    <label className="text-[10px] font-black uppercase text-[var(--text-muted)]">XP de Recompensa</label>
-                    <input type="number" required className="nu-input w-full font-black text-center" value={form.recompensa} onChange={e=>setForm({...form, recompensa: Number(e.target.value)})} />
+              <h3 className="text-2xl font-black uppercase italic">Designar Missão CEO</h3>
+              <div className="space-y-6">
+                 <input required className="nu-input w-full font-bold uppercase" value={form.titulo} onChange={e=>setForm({...form, titulo: e.target.value})} placeholder="TÍTULO DA MISSÃO" />
+                 <div className="grid grid-cols-2 gap-4">
+                    <select className="nu-input w-full font-black text-[10px]" value={form.prioridade} onChange={e=>setForm({...form, prioridade: e.target.value as any})}>
+                       <option>Baixa</option><option>Média</option><option>Alta</option><option>Crítica</option>
+                    </select>
+                    <input type="date" required className="nu-input w-full font-black text-[10px]" value={form.data} onChange={e=>setForm({...form, data: e.target.value})} />
                  </div>
               </div>
               <div className="flex gap-4">
-                 <button type="submit" className="btn-fire flex-1">DESIGNAR MISSÃO</button>
-                 <button type="button" onClick={() => setShowAdd(false)} className="px-8 py-3 bg-[var(--bg-input)] text-[var(--text-muted)] font-black uppercase rounded-2xl">CANCELAR</button>
+                 <button type="submit" className="btn-fire flex-1">DESIGNAR</button>
+                 <button type="button" onClick={() => setShowAdd(false)} className="px-8 py-3 bg-white/5 font-black uppercase rounded-xl">CANCELAR</button>
               </div>
            </motion.form>
         </div>
