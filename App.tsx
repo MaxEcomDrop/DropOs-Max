@@ -1,123 +1,127 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
 import { Products } from './components/Products';
 import { Sales } from './components/Sales';
 import { Finance } from './components/Finance';
+import { Missions } from './components/Missions';
+import { Settings as SettingsView } from './components/Settings';
 import { BottomNav } from './components/BottomNav';
-import { Settings, Moon, Sun, EyeOff, Eye } from 'lucide-react';
+import { Celebration } from './components/Celebration';
+import { storage } from './lib/storage';
+import { audioOps } from './lib/audio';
+import { Bell, History, Shield, Award, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { EstatisticasUsuario } from './types';
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('painel');
   const [isOlheiro, setIsOlheiro] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
-  const [showConfigMobile, setShowConfigMobile] = useState(false);
+  const [appConfig, setAppConfig] = useState(storage.configuracoes.obter());
+  const [theme, setTheme] = useState(appConfig.tema || 'dark');
+  const [userStats, setUserStats] = useState<EstatisticasUsuario>(storage.usuario.obterEstats());
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [logs, setLogs] = useState<any[]>([]);
 
   useEffect(() => {
-    const savedOlheiro = localStorage.getItem('olheiro_mode');
-    if (savedOlheiro) setIsOlheiro(JSON.parse(savedOlheiro));
-    
-    const savedTheme = localStorage.getItem('app_theme');
-    if (savedTheme) setTheme(savedTheme as 'light' | 'dark');
+    const updateAll = () => {
+      const config = storage.configuracoes.obter();
+      setAppConfig(config);
+      setUserStats(storage.usuario.obterEstats());
+      
+      const sales = storage.vendas.obterTodas().slice(0, 10);
+      const finance = storage.financeiro.obterTodos().slice(0, 10);
+      
+      const saleLogs = sales.map(s => ({ ...s, logType: 'venda', timestamp: s.data_venda }));
+      const financeLogs = finance.map(f => ({ ...f, logType: 'finance', timestamp: f.data }));
+      
+      setLogs([...saleLogs, ...financeLogs]
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
+
+      if (config.modoGhost) document.body.classList.add('ghost-active');
+      else document.body.classList.remove('ghost-active');
+    };
+    updateAll();
+    window.addEventListener('storage-update', updateAll);
+    return () => window.removeEventListener('storage-update', updateAll);
   }, []);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('app_theme', theme);
+    const newConfig = { ...appConfig, tema: theme };
+    storage.configuracoes.salvar(newConfig);
   }, [theme]);
 
   const toggleOlheiro = (val: boolean) => {
+    audioOps.click();
     setIsOlheiro(val);
-    localStorage.setItem('olheiro_mode', JSON.stringify(val));
   };
 
-  const renderContent = () => {
+  const Content = useMemo(() => {
+    const props = { isOlheiro, visualMode: appConfig.modoVisual };
     switch (activeTab) {
-      case 'dashboard': return <Dashboard isOlheiro={isOlheiro} theme={theme} />;
-      case 'produtos': return <Products isOlheiro={isOlheiro} />;
+      case 'painel': return <Dashboard {...props} setIsOlheiro={toggleOlheiro} />;
+      case 'produtos': return <Products {...props} />;
       case 'vendas': return <Sales isOlheiro={isOlheiro} />;
-      case 'financeiro': return <Finance isOlheiro={isOlheiro} />;
-      default: return <Dashboard isOlheiro={isOlheiro} theme={theme} />;
+      case 'financeiro': return <Finance {...props} />;
+      case 'missoes': return <Missions />;
+      case 'ajustes': return <SettingsView isOlheiro={isOlheiro} setIsOlheiro={toggleOlheiro} theme={theme} setTheme={setTheme} onConfigChange={() => setAppConfig(storage.configuracoes.obter())} />;
+      default: return <Dashboard {...props} setIsOlheiro={toggleOlheiro} />;
     }
-  };
+  }, [activeTab, isOlheiro, theme, appConfig.modoVisual]);
+
+  const progressoExp = (userStats.experiencia / userStats.proxNivelExp) * 100;
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-screen transition-colors duration-300">
-      {/* Desktop Sidebar */}
-      <Sidebar 
-        isOlheiro={isOlheiro} 
-        setIsOlheiro={toggleOlheiro}
-        theme={theme}
-        setTheme={setTheme}
-      />
-
-      <main className="flex-1 p-4 md:p-8 lg:p-12 overflow-y-auto">
-        <header className="mb-8 lg:mb-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div className="flex justify-between w-full md:w-auto items-center">
-            <div>
-              <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
-                DropOS <span className="text-[#820AD1]">Max</span>
-              </h1>
-              <p className="text-[10px] text-[var(--text-muted)] mt-1 font-semibold uppercase tracking-widest">Nu Edition - {activeTab.toUpperCase()}</p>
-            </div>
-            
-            {/* Mobile-only settings toggle */}
-            <button 
-              onClick={() => setShowConfigMobile(!showConfigMobile)}
-              className="lg:hidden p-3 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] text-[#820AD1]"
-            >
-              <Settings size={20} />
-            </button>
-          </div>
-
-          <div className="hidden md:flex items-center gap-4 bg-[var(--bg-card)] p-2 rounded-2xl border border-[var(--border-color)] transition-colors">
-             <div className="px-3 py-1 rounded-xl bg-[#820AD1]/10 text-[10px] font-bold text-[#820AD1] uppercase tracking-tighter">
-              Acesso Profissional
-            </div>
-            <div className="flex items-center gap-2 pr-2">
-                <div className="w-2 h-2 rounded-full bg-[#03D56F]"></div>
-                <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase">Status: Ativo</span>
-            </div>
-          </div>
-        </header>
-
-        {/* Mobile quick config overlay */}
-        {showConfigMobile && (
-          <div className="lg:hidden fixed inset-0 z-[1100] bg-black/50 backdrop-blur-sm p-6 flex flex-col items-center justify-center animate-in fade-in zoom-in duration-200" onClick={() => setShowConfigMobile(false)}>
-            <div className="nu-card w-full max-w-xs space-y-6" onClick={e => e.stopPropagation()}>
-              <h2 className="text-center font-bold uppercase text-[10px] tracking-widest border-b border-[var(--border-color)] pb-4">Personalização</h2>
-              <div className="grid grid-cols-1 gap-3">
-                <button 
-                  onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-                  className="flex items-center justify-between w-full p-4 rounded-2xl bg-[var(--bg-primary)] border border-[var(--border-color)]"
-                >
-                  <span className="text-xs font-bold uppercase">{theme === 'light' ? 'Ativar Modo Noite' : 'Ativar Modo Dia'}</span>
-                  {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
-                </button>
-                <button 
-                  onClick={() => toggleOlheiro(!isOlheiro)}
-                  className="flex items-center justify-between w-full p-4 rounded-2xl bg-[var(--bg-primary)] border border-[var(--border-color)]"
-                >
-                  <span className="text-xs font-bold uppercase">Modo Olheiro</span>
-                  {isOlheiro ? <EyeOff size={18} className="text-[#820AD1]" /> : <Eye size={18} />}
-                </button>
-              </div>
-              <button onClick={() => setShowConfigMobile(false)} className="nu-button-primary w-full text-xs">Concluir</button>
-            </div>
+    <div className="flex h-screen w-screen overflow-hidden bg-[var(--bg-primary)] text-[var(--text-main)] transition-colors duration-500">
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      
+      <main className="flex-1 flex flex-col min-w-0 bg-[var(--bg-primary)] relative h-full">
+        {appConfig.mostrarXP && (
+          <div className="h-1 bg-[var(--border-color)] w-full overflow-hidden relative">
+            <motion.div initial={{ width: 0 }} animate={{ width: `${progressoExp}%` }} className="h-full xp-bar-fire z-10 shadow-[0_0_15px_rgba(130,10,209,0.4)]" />
           </div>
         )}
 
-        <div className="max-w-6xl mx-auto">
-          {renderContent()}
-          
-          {/* TRUQUE DO ESPAÇADOR: Calço de segurança para garantir que o rodapé não cubra nada */}
-          <div style={{ height: '100px', paddingBottom: '50px' }}></div>
+        <header className="h-20 shrink-0 px-10 border-b border-[var(--border-color)] bg-[var(--bg-card)] flex items-center justify-between z-50">
+           <div className="flex items-center gap-8">
+              <h1 className="text-lg font-black tracking-tighter italic uppercase">
+                {appConfig.storeName} <span className="text-[var(--nu-purple)]">{appConfig.codename || 'COMANDO'}</span>
+              </h1>
+              {appConfig.mostrarXP && (
+                <div className="flex items-center gap-3 px-4 py-1.5 bg-[var(--bg-input)] rounded-full border border-[var(--border-color)]">
+                  <Award size={14} className="text-[var(--nu-purple)]" />
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest">Nível {userStats.nivel} <span className="text-[var(--text-muted)] opacity-50 ml-1">• {userStats.patente}</span></span>
+                </div>
+              )}
+           </div>
+
+           <div className="flex items-center gap-5">
+              <button onClick={() => setShowNotifications(!showNotifications)} className={`p-3 rounded-2xl transition-all relative ${showNotifications ? 'bg-[var(--nu-purple)] text-white' : 'bg-[var(--bg-input)] text-[var(--text-muted)]'}`}>
+                 <Bell size={20} />
+              </button>
+              <button onClick={() => toggleOlheiro(!isOlheiro)} className={`p-3 rounded-2xl transition-all border ${isOlheiro ? 'border-[var(--nu-error)] text-[var(--nu-error)]' : 'bg-[var(--bg-input)] border-transparent text-[var(--text-muted)]'}`}>
+                 <Shield size={20} />
+              </button>
+           </div>
+        </header>
+
+        <div className="flex-1 overflow-y-auto nu-scrollbar overscroll-contain relative">
+           <div className="p-8 md:p-12 max-w-7xl mx-auto safe-bottom-padding">
+             <AnimatePresence mode="wait">
+               <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.25 }}>
+                 {Content}
+               </motion.div>
+             </AnimatePresence>
+          </div>
+        </div>
+
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[100]">
+          <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
         </div>
       </main>
-
-      {/* Native-like Bottom Navigation */}
-      <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Celebration />
     </div>
   );
 };

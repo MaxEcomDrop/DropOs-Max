@@ -1,41 +1,51 @@
-
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DropOS Max - Nu Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>DropOS Max - Sistema de Gestão Supremo</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --nu-purple: #820AD1;
-            --success: #03D56F;
-            --danger: #FF5252;
+            --nu-purple-hover: #9b30e3;
+            --nu-success: #00FF9C;
+            --nu-error: #FF3131;
+            --nu-info: #00E5FF;
+            --fire-glow: linear-gradient(90deg, #820AD1, #61089b, #3e0563, #820AD1);
+            --transition-game: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Light Theme (Default) */
-        [data-theme='light'] {
-            --bg-primary: #F0F2F6;
-            --bg-card: #FFFFFF;
-            --bg-input: #FFFFFF;
-            --text-main: #262626;
-            --text-muted: #666666;
-            --border-color: #E2E8F0;
-            --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            --nav-bg: #FFFFFF;
-        }
-
-        /* Dark Theme */
+        /* NIGHT OPERATIVE (TACTICAL DARK) */
         [data-theme='dark'] {
-            --bg-primary: #191919;
-            --bg-card: #262626;
-            --bg-input: #1F1F1F;
-            --text-main: #F5F5F5;
-            --text-muted: #94A3B8;
-            --border-color: #333333;
-            --shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-            --nav-bg: #262626;
+            --bg-primary: #08080A; 
+            --bg-card: #121214;    
+            --bg-sidebar: #08080A;
+            --bg-input: #1A1A1E;   
+            --text-main: #FFFFFF;
+            --text-muted: #8E8E93;
+            --border-color: rgba(130, 10, 209, 0.2);
+            --shadow-card: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.03);
+            --shadow-hover: 0 20px 50px rgba(0, 0, 0, 0.9), 0 0 0 2px var(--nu-purple);
+            --highlight-bg: #1C1C21;
+            --highlight-text: var(--nu-purple);
+        }
+
+        /* DAWN PROTOCOL (SUNRISE LIGHT) - ROXO SUPREMO */
+        [data-theme='light'] {
+            --bg-primary: #FDFBFF; 
+            --bg-card: #FFFFFF;
+            --bg-sidebar: #FFFFFF;
+            --bg-input: #F5F2FF;
+            --text-main: #1A0D2D; 
+            --text-muted: #7E748C;
+            --border-color: #E9E4F5;
+            --nu-purple: #820AD1; 
+            --shadow-card: 0 10px 30px rgba(130, 10, 209, 0.08), 0 2px 4px rgba(0, 0, 0, 0.02);
+            --shadow-hover: 0 15px 40px rgba(130, 10, 209, 0.15), 0 0 0 2px var(--nu-purple);
+            --highlight-bg: #F0EDFF;
+            --highlight-text: var(--nu-purple);
         }
 
         body {
@@ -43,128 +53,129 @@
             background-color: var(--bg-primary);
             color: var(--text-main);
             margin: 0;
-            transition: background-color 0.3s ease, color 0.3s ease;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            transition: background-color 0.6s cubic-bezier(0.4, 0, 0.2, 1);
             -webkit-font-smoothing: antialiased;
-            overflow-x: hidden;
         }
 
         .nu-card {
             background-color: var(--bg-card);
             border: 1px solid var(--border-color);
+            border-radius: 24px;
+            box-shadow: var(--shadow-card);
+            transition: var(--transition-game);
+            position: relative;
+            z-index: 1;
+        }
+
+        .nu-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .btn-fire {
+            background: var(--fire-glow);
+            background-size: 200% auto;
+            animation: fireMove 3s linear infinite;
+            color: white;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
             border-radius: 16px;
-            padding: 24px;
-            box-shadow: var(--shadow);
-            transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.2s ease;
+            padding: 14px 28px;
+            border: none;
+            cursor: pointer;
+            transition: var(--transition-game);
+            box-shadow: 0 8px 20px rgba(130, 10, 209, 0.3);
         }
 
-        .nu-button-primary {
-            background-color: var(--nu-purple);
-            color: #FFFFFF;
-            font-weight: 600;
-            border-radius: 50px;
-            padding: 12px 24px;
-            transition: all 0.2s ease;
-        }
-
-        .nu-button-primary:hover {
+        .btn-fire:hover {
+            transform: scale(1.05) translateY(-2px);
             filter: brightness(1.1);
-            transform: translateY(-1px);
+        }
+
+        .xp-bar-fire {
+            background: var(--fire-glow);
+            background-size: 200% auto;
+            animation: fireMove 2s linear infinite;
+        }
+
+        @keyframes fireMove {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+
+        @keyframes spin-slow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .animate-spin-slow {
+            animation: spin-slow 12s linear infinite;
         }
 
         .nu-input {
             background-color: var(--bg-input);
             border: 1px solid var(--border-color);
             color: var(--text-main);
-            border-radius: 12px;
-            padding: 14px;
-            width: 100%;
-            transition: border-color 0.2s, background-color 0.3s;
+            border-radius: 16px;
+            padding: 14px 20px;
+            font-size: 0.875rem;
+            transition: var(--transition-game);
         }
 
         .nu-input:focus {
             outline: none;
             border-color: var(--nu-purple);
+            box-shadow: 0 0 0 4px rgba(130, 10, 209, 0.15);
         }
 
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 75px;
-            background: var(--nav-bg);
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            padding-bottom: env(safe-area-inset-bottom);
-            z-index: 9999;
-            box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
+        .nu-scrollbar::-webkit-scrollbar { width: 6px; }
+        .nu-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .nu-scrollbar::-webkit-scrollbar-thumb { background: var(--nu-purple); border-radius: 10px; }
+
+        .safe-bottom-padding { padding-bottom: 160px; }
+        @media (min-width: 1024px) {
+            .safe-bottom-padding { padding-bottom: 60px; }
         }
 
-        .nav-item-mobile {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            flex: 1;
-            height: 100%;
-            color: var(--text-muted);
-            transition: all 0.2s ease;
+        .glass-modal {
+            background: var(--bg-card);
+            backdrop-filter: blur(25px);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.6);
         }
 
-        .nav-item-mobile.active {
-            color: var(--nu-purple);
-        }
-
-        .nav-item-mobile .icon-container {
-            padding: 6px 16px;
-            border-radius: 20px;
-            transition: background-color 0.2s ease;
-        }
-
-        .nav-item-mobile.active .icon-container {
-            background-color: rgba(130, 10, 209, 0.1);
-        }
-
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: var(--bg-primary);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: var(--border-color);
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--nu-purple);
-        }
-
-        .blur-amount {
-            filter: blur(10px);
+        .ghost-active .ghost-blur {
+            filter: blur(12px);
+            pointer-events: none;
             user-select: none;
+            opacity: 0.4;
         }
-
-        /* Animations */
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
     </style>
 <script type="importmap">
 {
   "imports": {
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
+    "react": "https://esm.sh/react@19.0.0",
+    "react-dom": "https://esm.sh/react-dom@19.0.0",
+    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+    "react/jsx-runtime": "https://esm.sh/react@19.0.0/jsx-runtime",
+    "lucide-react": "https://esm.sh/lucide-react@0.475.0?external=react",
+    "framer-motion": "https://esm.sh/framer-motion@12.24.10?external=react,react-dom",
+    "recharts": "https://esm.sh/recharts@2.15.0?external=react,react-dom",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.48.0",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "recharts": "https://esm.sh/recharts@^3.6.0",
-    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.39.7"
+    "react/": "https://esm.sh/react@^19.2.3/"
   }
 }
 </script>
 </head>
-<body>
-    <div id="root"></div>
+<body class="fixed inset-0 overflow-hidden select-none">
+    <div id="root" class="w-full h-full"></div>
+    <div id="toasts" class="fixed top-24 right-8 z-[10000] flex flex-col gap-3 pointer-events-none"></div>
+    <script type="module" src="index.tsx"></script>
 </body>
 </html>

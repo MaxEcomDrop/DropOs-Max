@@ -1,43 +1,101 @@
 
-export type StockType = 'Físico' | 'Virtual';
-export type Channel = 'Mercado Livre' | 'Shopee' | 'WhatsApp' | 'Balcão';
-export type TransactionType = 'Entrada' | 'Saída';
+export type CanalVenda = 'Mercado Livre' | 'Shopee' | 'WhatsApp' | 'Site Próprio' | 'Instagram' | 'TikTok' | 'Facebook Ads' | 'Google Ads' | 'Taboola';
+export type TipoTransacao = 'Receita' | 'Despesa' | 'Investimento';
+export type CategoriaFinanceira = 'Vendas' | 'CMV' | 'Marketing' | 'Impostos' | 'Operacional' | 'Comissões' | 'Software' | 'Reserva' | 'Outros';
+export type FrequenciaMissao = 'Diária' | 'Semanal' | 'Mensal' | 'Livre';
+export type RaridadeProduto = 'Comum' | 'Raro' | 'Épico' | 'Lendário';
+export type RegimeTributario = 'MEI' | 'Simples Nacional' | 'CPF';
+export type ModoVisual = 'normal' | 'rico' | 'milionario';
+export type TemaSistema = 'dark' | 'light';
 
-export interface Supplier {
-  id?: string;
+// Fix: Added Skill interface to resolve error in lib/storage.ts
+export interface Skill {
+  id: string;
   nome: string;
-  contato: string;
-  saldo_haver: number;
+  nivel: number;
 }
 
-export interface Product {
-  id?: string;
+// Fix: Added EstatisticasUsuario interface to resolve errors in App.tsx and lib/storage.ts
+export interface EstatisticasUsuario {
+  nivel: number;
+  experiencia: number;
+  proxNivelExp: number;
+  patente: string;
+  sequencia: number;
+  conquistas: string[];
+  skills: Skill[];
+  health_score: number;
+}
+
+export interface Missao {
+  id: string;
+  titulo: string;
+  recompensa: number;
+  progresso: number;
+  objetivo: number;
+  frequencia: FrequenciaMissao;
+  completa: boolean;
+  categoria: string;
+  isCustom?: boolean;
+}
+
+export interface LancamentoFinanceiro {
+  id: string;
+  descricao: string;
+  valor: number;
+  tipo: TipoTransacao;
+  categoria: CategoriaFinanceira;
+  data: string;
+  status: 'Pendente' | 'Pago';
+  venda_id?: string;
+}
+
+export interface Produto {
+  id: string;
   sku: string;
   nome: string;
-  tipo: StockType;
-  fornecedor: string; // Nome do fornecedor
-  custo: number;
-  preco_venda: number;
+  custo_fornecedor: number;
+  preco_venda_alvo: number;
+  raridade: RaridadeProduto;
+  // Fix: Added properties used in components/Products.tsx
+  fornecedor_nome?: string;
+  isZumbi?: boolean;
 }
 
-export interface FinancialEntry {
-  id?: string;
-  descricao: string;
-  tipo: TransactionType;
-  valor: number;
-  vencimento: string;
-  status: 'Pago' | 'Pendente';
-}
-
-export interface Sale {
-  id?: string;
+export interface Venda {
+  id: string;
   data_venda: string;
-  canal: Channel;
-  loja: string;
-  produto: string; // Nome do produto
-  qtd: number;
-  valor_bruto: number;
-  valor_liquido: number;
-  custo_produto: number;
+  canal: CanalVenda;
+  produto_nome: string;
+  faturamento_bruto: number;
+  valor_liquido_recebido: number;
+  custo_mercadoria_total: number;
   lucro_real: number;
+  custo_ads: number;
+  comissao_paga?: number;
+  // Fix: Added properties to resolve error in components/Sales.tsx
+  cliente: string;
+  produto_id: string;
+  quantidade: number;
+  valor_venda_un: number;
+  status: string;
+}
+
+export interface ConfiguracoesApp {
+  modoVisual: ModoVisual;
+  modoGhost: boolean;
+  mostrarXP: boolean;
+  tema: TemaSistema;
+  codename: string;
+  storeName: string;
+  metas: { mensal: number; diaria: number };
+  financeiro: {
+    regime: RegimeTributario;
+    aliquotaImposto: number;
+    valorDasMensal: number;
+    reservaEmergencia: number;
+    porcentagemSocio: number;
+    porcentagemFuncionario: number; // Nova mecânica de comissão
+  };
+  pomodoroTime: number;
 }

@@ -1,103 +1,98 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  EyeOff, Eye, Timer, CheckCircle2, Moon, Sun, Lightbulb, 
-  RefreshCcw, Settings, Database, AlertTriangle, FileJson, Download 
+  Settings, LayoutDashboard, Package, ShoppingCart, Wallet, Store, Shield, Zap, Trophy
 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { storage } from '../lib/storage';
+import { motion } from 'framer-motion';
 
 interface SidebarProps {
-  isOlheiro: boolean;
-  setIsOlheiro: (val: boolean) => void;
-  theme: 'light' | 'dark';
-  setTheme: (theme: 'light' | 'dark') => void;
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ isOlheiro, setIsOlheiro, theme, setTheme }) => {
-  const [pomodoro, setPomodoro] = useState(1500); 
+export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
+  const [config, setConfig] = useState(storage.configuracoes.obter());
+  const [pomodoro, setPomodoro] = useState(config.pomodoroTime * 60); 
   const [isActive, setIsActive] = useState(false);
-  const [ideas, setIdeas] = useState('');
-  const [checklist, setChecklist] = useState({ estoque: false, boletos: false, pix: false });
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      const newConfig = storage.configuracoes.obter();
+      setConfig(newConfig);
+      if (!isActive) setPomodoro(newConfig.pomodoroTime * 60);
+    };
+    window.addEventListener('storage-update', handleUpdate);
+    return () => window.removeEventListener('storage-update', handleUpdate);
+  }, [isActive]);
 
   useEffect(() => {
     let interval: any = null;
     if (isActive && pomodoro > 0) {
-      interval = setInterval(() => setPomodoro(prev => prev - 1), 1000);
-    } else if (pomodoro === 0) {
-      setIsActive(false);
-      setPomodoro(1500);
-      alert("Foco Encerrado! Hora de descansar 5 minutos.");
+      interval = setInterval(() => setPomodoro(p => p - 1), 1000);
+    } else if (pomodoro === 0) { 
+      setIsActive(false); 
+      setPomodoro(config.pomodoroTime * 60);
+      alert('Sessão de Foco Finalizada!');
     }
     return () => clearInterval(interval);
-  }, [isActive, pomodoro]);
+  }, [isActive, pomodoro, config.pomodoroTime]);
 
-  const exportBackup = async () => {
-    const { data: p } = await supabase.from('produtos').select('*');
-    const { data: s } = await supabase.from('vendas').select('*');
-    const { data: f } = await supabase.from('financeiro').select('*');
-    const backup = { produtos: p, vendas: s, financeiro: f, timestamp: new Date().toISOString() };
-    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `backup_dropos_${new Date().toLocaleDateString()}.json`;
-    link.click();
-  };
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
+  const navItems = [
+    { id: 'painel', label: 'Painel de Controle', icon: <LayoutDashboard size={20} /> },
+    { id: 'vendas', label: 'Vendas e Pedidos', icon: <ShoppingCart size={20} /> },
+    { id: 'produtos', label: 'Arsenal (Estoque)', icon: <Package size={20} /> },
+    { id: 'financeiro', label: 'Cofre (Financeiro)', icon: <Wallet size={20} /> },
+    { id: 'missoes', label: 'Missões de Elite', icon: <Trophy size={20} /> },
+    { id: 'ajustes', label: 'Centro de Comando', icon: <Settings size={20} /> },
+  ];
 
   return (
-    <aside className="hidden lg:flex w-72 bg-[var(--bg-card)] border-r border-[var(--border-color)] p-8 flex-col gap-8 sticky top-0 h-screen overflow-y-auto transition-colors duration-300">
-      <div className="flex flex-col gap-4">
-        <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-[0.2em] font-bold pl-2 flex items-center gap-2"><Settings size={14} /> Sistema</p>
-        <div className="grid grid-cols-2 gap-2">
-          <button onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')} className={`flex items-center justify-center gap-2 p-3 rounded-2xl border border-[var(--border-color)] transition-all ${theme === 'dark' ? 'bg-[#820AD1] text-white' : 'bg-white text-[#262626]'}`}>
-            {theme === 'light' ? <Sun size={16} /> : <Moon size={16} />}
-            <span className="text-[10px] font-bold uppercase">{theme === 'light' ? 'Dia' : 'Noite'}</span>
-          </button>
-          <button onClick={() => setIsOlheiro(!isOlheiro)} className={`flex items-center justify-center gap-2 p-3 rounded-2xl border border-[var(--border-color)] transition-all ${isOlheiro ? 'bg-[#820AD1] text-white' : 'bg-[var(--bg-primary)]'}`}>
-            {isOlheiro ? <EyeOff size={16} /> : <Eye size={16} />}
-            <span className="text-[10px] font-bold uppercase">Olheiro</span>
-          </button>
+    <aside className="hidden lg:flex w-72 bg-[var(--bg-sidebar)] flex-col p-6 h-screen shrink-0 border-r border-[var(--border-color)] z-50 shadow-xl transition-all">
+      <div className="flex items-center gap-4 mb-12 px-2">
+        <div className="w-12 h-12 bg-[var(--nu-purple)] rounded-2xl flex items-center justify-center shadow-lg group overflow-hidden icon-wiggle">
+          <Store size={24} className="text-white relative z-10 group-hover:scale-110 transition-transform" />
+        </div>
+        <div className="flex flex-col text-left">
+           <h1 className="text-sm font-black tracking-tight text-[var(--text-main)] uppercase leading-none truncate w-40">
+             {config.storeName || 'DropOS Max'}
+           </h1>
+           <span className="text-[9px] font-black uppercase text-[var(--nu-purple)] tracking-widest mt-1 opacity-80">ECOMMERCE SUPREMO</span>
         </div>
       </div>
 
-      <div className="space-y-4">
-         <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-[0.2em] font-bold pl-2 flex items-center gap-2"><Timer size={14} /> Pomodoro 25/5</p>
-         <div className="bg-[var(--bg-primary)] rounded-3xl p-6 text-center border border-[var(--border-color)] shadow-inner">
-            <div className="text-3xl font-black mb-4 tracking-tighter">{formatTime(pomodoro)}</div>
-            <button onClick={() => setIsActive(!isActive)} className={`w-full py-2 rounded-full text-[10px] font-black uppercase transition-all ${isActive ? 'bg-red-500 text-white' : 'bg-[#820AD1] text-white'}`}>
-               {isActive ? 'Pausar' : 'Focar Agora'}
-            </button>
-         </div>
-      </div>
+      <nav className="flex-1 space-y-2">
+        {navItems.map(item => (
+          <button
+            key={item.id}
+            onClick={() => setActiveTab(item.id)}
+            className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all text-[13px] font-bold tracking-tight relative group icon-wiggle ${
+              activeTab === item.id 
+              ? 'bg-[var(--nu-purple)] text-white shadow-lg' 
+              : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--nu-purple)]/10'
+            }`}
+          >
+            <span className={activeTab === item.id ? 'text-white' : 'text-[var(--nu-purple)]'}>{item.icon}</span>
+            {item.label}
+            {activeTab === item.id && (
+              <motion.div layoutId="sidebar-active" className="absolute left-0 w-1.5 h-6 bg-white rounded-full ml-1" />
+            )}
+          </button>
+        ))}
+      </nav>
 
-      <div className="space-y-3">
-        <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-[0.2em] font-bold pl-2 flex items-center gap-2"><CheckCircle2 size={14} /> Zerar o Dia</p>
-        <div className="space-y-1 bg-[var(--bg-primary)] p-3 rounded-2xl border border-[var(--border-color)]">
-          {[
-            { id: 'estoque', label: 'Conferir Zumbis' },
-            { id: 'boletos', label: 'DAS e Impostos' },
-            { id: 'pix', label: 'Conciliar Pix' }
-          ].map(task => (
-            <label key={task.id} className="flex items-center gap-3 p-2 rounded-xl cursor-pointer hover:bg-black/5 transition-colors">
-              <input type="checkbox" checked={(checklist as any)[task.id]} onChange={() => setChecklist(prev => ({ ...prev, [task.id]: !(prev as any)[task.id] }))} className="w-3 h-3 accent-[#820AD1]" />
-              <span className={`text-[11px] font-medium ${ (checklist as any)[task.id] ? 'text-[var(--text-muted)] line-through' : 'text-[var(--text-main)]'}`}>{task.label}</span>
-            </label>
-          ))}
+      <div className="mt-auto pt-6 border-t border-[var(--border-color)]">
+        <div className="flex items-center justify-between mb-4 px-2">
+          <div className="flex items-center gap-2">
+             <Shield size={14} className="text-[var(--nu-purple)]" />
+             <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">Sessão Alpha</span>
+          </div>
+          <span className={`text-sm font-black tabular-nums italic ${isActive ? 'text-[var(--nu-purple)]' : 'text-[var(--text-muted)]'}`}>
+            {Math.floor(pomodoro/60).toString().padStart(2,'0')}:{(pomodoro%60).toString().padStart(2,'0')}
+          </span>
         </div>
-      </div>
-
-      <div className="mt-auto pt-6 flex flex-col gap-3">
-        <button onClick={exportBackup} className="flex items-center justify-center gap-2 w-full p-3 bg-[#03D56F]/10 border border-[#03D56F]/30 text-[#03D56F] rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:bg-[#03D56F] hover:text-white transition-all">
-          <Download size={14} /> Backup JSON
-        </button>
-        <button onClick={() => window.location.reload()} className="flex items-center justify-center gap-2 text-[10px] font-bold text-[var(--text-muted)] hover:text-[#820AD1] transition-colors">
-          <RefreshCcw size={12} /> Limpar Cache
+        <button onClick={() => setIsActive(!isActive)} className={`w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest italic transition-all border ${isActive ? 'border-[var(--nu-error)] text-[var(--nu-error)] bg-[var(--nu-error)]/10' : 'bg-[var(--bg-input)] text-[var(--text-muted)] border-[var(--border-color)] hover:border-[var(--nu-purple)]'}`}>
+          {isActive ? 'INTERROMPER CICLO' : 'INICIAR SESSÃO'}
         </button>
       </div>
     </aside>

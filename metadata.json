@@ -2,6 +2,7 @@
   "name": "DropOS Max ERP",
   "description": "A high-performance hacker-themed E-commerce ERP with real-time stock analysis, zombie product detection, and advanced financial tracking.",
   "requestFramePermissions": [
-    "camera"
+    "camera",
+    "microphone"
   ]
 }

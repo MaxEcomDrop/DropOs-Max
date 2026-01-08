@@ -11,9 +11,10 @@
   "dependencies": {
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
-    "recharts": "^3.6.0",
-    "lucide-react": "^0.562.0",
-    "@supabase/supabase-js": "2.39.7"
+    "lucide-react": "0.475.0",
+    "framer-motion": "12.24.10",
+    "recharts": "2.15.0",
+    "@supabase/supabase-js": "2.48.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
