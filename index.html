@@ -1,47 +1,40 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>DropOS Max - Sistema de Gestão Supremo</title>
+    <title>DropOS Max - ERP Supremo</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
+            /* MODO NOTURNO (Default) */
             --nu-purple: #820AD1;
-            --nu-purple-hover: #9b30e3;
+            --nu-purple-dark: #220033;
             --nu-success: #00FF9C;
             --nu-error: #FF3131;
             --nu-info: #00E5FF;
-            --fire-glow: linear-gradient(90deg, #820AD1, #61089b, #3e0563, #820AD1);
-            --transition-game: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        /* TACTICAL DARK */
-        [data-theme='dark'] {
-            --bg-primary: #08080A; 
-            --bg-card: #121214;    
-            --bg-sidebar: #08080A;
-            --bg-input: #1A1A1E;   
+            --bg-primary: #000000;
+            --bg-card: #111111;
+            --bg-sidebar: #080808;
+            --bg-input: #1C1C1E;
+            --border-color: rgba(255, 255, 255, 0.1);
             --text-main: #FFFFFF;
-            --text-muted: #8E8E93;
-            --border-color: rgba(130, 10, 209, 0.2);
-            --shadow-card: 0 15px 45px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.03);
-            --shadow-hover: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 0 2px var(--nu-purple);
+            --text-muted: #A1A1A6;
+            --shadow-nu: 0 10px 30px rgba(0, 0, 0, 0.5);
         }
 
-        /* SUNRISE LIGHT */
         [data-theme='light'] {
-            --bg-primary: #F0F2F5; 
+            /* MODO ALVORADA */
+            --bg-primary: #F4F4F7;
             --bg-card: #FFFFFF;
             --bg-sidebar: #FFFFFF;
-            --bg-input: #F8F9FA;
-            --text-main: #1A0D2D; 
-            --text-muted: #64748B;
-            --border-color: #E2E8F0;
-            --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
-            --shadow-hover: 0 15px 35px rgba(130, 10, 209, 0.1), 0 0 0 2px var(--nu-purple);
+            --bg-input: #F1F1F4;
+            --border-color: rgba(0, 0, 0, 0.06);
+            --text-main: #111111;
+            --text-muted: #666666;
+            --nu-purple-dark: #EBD6FF;
+            --shadow-nu: 0 10px 40px rgba(0, 0, 0, 0.04);
         }
 
         body {
@@ -49,99 +42,63 @@
             background-color: var(--bg-primary);
             color: var(--text-main);
             margin: 0;
+            -webkit-font-smoothing: antialiased;
+            transition: background-color 0.3s ease, color 0.3s ease;
             height: 100vh;
             width: 100vw;
             overflow: hidden;
-            display: flex;
-            transition: background-color 0.6s ease;
-            -webkit-font-smoothing: antialiased;
         }
 
-        /* EFEITO SCANLINE (HACKER) */
-        .scanline {
-            width: 100%;
-            height: 100px;
-            z-index: 9999;
-            background: linear-gradient(0deg, transparent 0%, rgba(130, 10, 209, 0.05) 50%, transparent 100%);
-            opacity: 0.1;
-            position: absolute;
-            pointer-events: none;
-            animation: scanline 8s linear infinite;
+        .nu-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+        .nu-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .nu-scrollbar::-webkit-scrollbar-thumb { background: var(--nu-purple); border-radius: 10px; opacity: 0.3; }
+
+        .nu-card { 
+            background-color: var(--bg-card); 
+            border: 1px solid var(--border-color); 
+            border-radius: 24px; 
+            box-shadow: var(--shadow-nu);
+            transition: all 0.2s ease;
         }
-
-        @keyframes scanline {
-            0% { top: -100px; }
-            100% { top: 100%; }
+        
+        .btn-fire { 
+            background-color: var(--nu-purple); 
+            color: white !important; 
+            font-weight: 800; 
+            text-transform: uppercase; 
+            border-radius: 16px; 
+            border: none; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 8px; 
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(130, 10, 209, 0.3);
         }
+        .btn-fire:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(130, 10, 209, 0.4); }
+        .btn-fire:active { transform: scale(0.96); }
 
-        /* INTERAÇÃO BOTÕES */
-        button:active { transform: scale(0.95); }
-        .nu-card {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 32px;
-            box-shadow: var(--shadow-card);
-            transition: var(--transition-game);
+        .nu-input { 
+            background-color: var(--bg-input); 
+            border: 1px solid var(--border-color); 
+            color: var(--text-main); 
+            border-radius: 16px; 
+            padding: 14px 18px; 
+            outline: none; 
+            width: 100%; 
+            transition: all 0.2s ease;
         }
-        .nu-card:hover {
-            transform: translateY(-5px);
-            box-shadow: var(--shadow-hover);
+        .nu-input:focus { border-color: var(--nu-purple); box-shadow: 0 0 0 2px rgba(130, 10, 209, 0.1); }
+
+        .xp-text { position: fixed; color: var(--nu-purple); font-weight: 900; pointer-events: none; z-index: 10000; animation: xp-float 1.2s ease-out forwards; font-size: 18px; }
+        @keyframes xp-float { 0% { transform: translateY(0); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(-50px); opacity: 0; } }
+
+        /* Ajustes Mobile para não quebrar cards */
+        @media (max-width: 640px) {
+            .nu-card { border-radius: 20px; }
+            .p-8 { padding: 1.5rem !important; }
         }
-
-        /* XP BAR ANIMATION */
-        .xp-bar-fire {
-            background: var(--fire-glow);
-            background-size: 200% auto;
-            animation: fireMove 2s linear infinite;
-            position: relative;
-        }
-        .xp-bar-fire::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-            animation: shimmer 1.5s infinite;
-        }
-
-        @keyframes fireMove { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
-        @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
-
-        .btn-fire {
-            background: var(--fire-glow);
-            background-size: 200% auto;
-            animation: fireMove 3s linear infinite;
-            color: white;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            border-radius: 24px;
-            padding: 16px 32px;
-            border: none;
-            cursor: pointer;
-            transition: var(--transition-game);
-            box-shadow: 0 10px 25px rgba(130, 10, 209, 0.3);
-        }
-        .btn-fire:hover { transform: scale(1.02) translateY(-2px); filter: brightness(1.1); }
-
-        .nu-input {
-            background-color: var(--bg-input);
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
-            border-radius: 22px;
-            padding: 18px 26px;
-            transition: var(--transition-game);
-        }
-        .nu-input:focus { outline: none; border-color: var(--nu-purple); box-shadow: 0 0 0 6px rgba(130, 10, 209, 0.1); }
-
-        .nu-scrollbar::-webkit-scrollbar { width: 8px; }
-        .nu-scrollbar::-webkit-scrollbar-thumb { background: var(--nu-purple); border-radius: 10px; border: 2px solid var(--bg-primary); }
-
-        .safe-bottom-padding { padding-bottom: 200px; }
-        @media (min-width: 1024px) { .safe-bottom-padding { padding-bottom: 100px; } }
-
-        /* LOADING SPINNER SUPREMO */
-        .loading-pulse { animation: pulse-shadow 2s infinite; }
-        @keyframes pulse-shadow { 0% { box-shadow: 0 0 0 0 rgba(130, 10, 209, 0.4); } 70% { box-shadow: 0 0 0 20px rgba(130, 10, 209, 0); } 100% { box-shadow: 0 0 0 0 rgba(130, 10, 209, 0); } }
     </style>
 <script type="importmap">
 {
@@ -160,10 +117,9 @@
 }
 </script>
 </head>
-<body class="fixed inset-0 overflow-hidden select-none">
-    <div class="scanline"></div>
+<body>
     <div id="root" class="w-full h-full"></div>
-    <div id="toasts" class="fixed top-28 right-10 z-[10000] flex flex-col gap-4 pointer-events-none"></div>
+    <div id="toasts" class="fixed top-20 right-4 z-[10000] flex flex-col gap-2 pointer-events-none"></div>
     <script type="module" src="index.tsx"></script>
 </body>
 </html>

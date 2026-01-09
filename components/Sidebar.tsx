@@ -40,9 +40,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
 
   const navItems = [
     { id: 'painel', label: 'Painel de Controle', icon: <LayoutDashboard size={20} /> },
-    { id: 'vendas', label: 'Vendas e Pedidos', icon: <ShoppingCart size={20} /> },
-    { id: 'produtos', label: 'Arsenal (Estoque)', icon: <Package size={20} /> },
-    { id: 'financeiro', label: 'Cofre (Financeiro)', icon: <Wallet size={20} /> },
+    { id: 'vendas', label: 'Ordens e Vendas', icon: <ShoppingCart size={20} /> },
+    { id: 'produtos', label: 'Estoque do Arsenal', icon: <Package size={20} /> },
+    { id: 'financeiro', label: 'Cofre e Fluxo', icon: <Wallet size={20} /> },
     { id: 'missoes', label: 'Missões de Elite', icon: <Trophy size={20} /> },
     { id: 'ajustes', label: 'Centro de Comando', icon: <Settings size={20} /> },
   ];
@@ -57,7 +57,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
            <h1 className="text-sm font-black tracking-tight text-[var(--text-main)] uppercase leading-none truncate w-40">
              {config.storeName || 'DropOS Max'}
            </h1>
-           <span className="text-[9px] font-black uppercase text-[var(--nu-purple)] tracking-widest mt-1 opacity-80">ECOMMERCE SUPREMO</span>
+           <span className="text-[9px] font-black uppercase text-[var(--nu-purple)] tracking-widest mt-1 opacity-80">OPERADOR SUPREMO</span>
         </div>
       </div>
 
@@ -85,14 +85,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
         <div className="flex items-center justify-between mb-4 px-2">
           <div className="flex items-center gap-2">
              <Shield size={14} className="text-[var(--nu-purple)]" />
-             <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">Sessão Alpha</span>
+             <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">Protocolo Foco</span>
           </div>
           <span className={`text-sm font-black tabular-nums italic ${isActive ? 'text-[var(--nu-purple)]' : 'text-[var(--text-muted)]'}`}>
             {Math.floor(pomodoro/60).toString().padStart(2,'0')}:{(pomodoro%60).toString().padStart(2,'0')}
           </span>
         </div>
         <button onClick={() => setIsActive(!isActive)} className={`w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest italic transition-all border ${isActive ? 'border-[var(--nu-error)] text-[var(--nu-error)] bg-[var(--nu-error)]/10' : 'bg-[var(--bg-input)] text-[var(--text-muted)] border-[var(--border-color)] hover:border-[var(--nu-purple)]'}`}>
-          {isActive ? 'INTERROMPER CICLO' : 'INICIAR SESSÃO'}
+          {isActive ? 'INTERROMPER' : 'ATIVAR MODO FOCO'}
         </button>
       </div>
     </aside>

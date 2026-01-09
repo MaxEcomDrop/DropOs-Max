@@ -8,6 +8,7 @@ export type RegimeTributario = 'MEI' | 'Simples Nacional' | 'CPF';
 export type ModoVisual = 'normal' | 'rico' | 'milionario';
 export type TemaSistema = 'dark' | 'light';
 export type PrioridadeMissao = 'Baixa' | 'Média' | 'Alta' | 'Crítica';
+export type FiltroData = 'Hoje' | 'Ontem' | 'Últimos 7 Dias' | 'Este Mês' | 'Últimos 6 Meses' | 'Este Ano' | 'Todo o Período';
 
 export interface Skill {
   id: string;

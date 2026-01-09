@@ -21,20 +21,20 @@ export const Missions: React.FC = () => {
     e.preventDefault();
     if (!form.titulo) return;
     storage.missoes.salvar(form.titulo, form.prioridade, form.data);
-    notificar("Missão Designada com Sucesso");
+    notificar("Nova missão designada");
     setShowAdd(false);
     setForm({ titulo: '', prioridade: 'Média', data: new Date().toISOString().split('T')[0] });
   };
 
   return (
-    <div className="flex flex-col gap-10 pb-40 text-left">
+    <div className="flex flex-col gap-10 text-left w-full">
       <div className="flex justify-between items-center">
          <div>
-            <h2 className="text-3xl font-black italic uppercase tracking-tighter">Missões do CEO</h2>
-            <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.4em]">Acumule XP para evoluir sua Patente Operacional</p>
+            <h2 className="text-3xl font-black italic uppercase tracking-tighter">Missões Operacionais</h2>
+            <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.4em]">Evolua seu comando através da execução</p>
          </div>
          <button onClick={() => setShowAdd(true)} className="btn-fire !py-3 !px-8 flex items-center gap-3">
-            <Plus size={18} /> DESIGNAR MISSÃO
+            <Plus size={18} /> NOVA MISSÃO
          </button>
       </div>
 
@@ -81,7 +81,7 @@ export const Missions: React.FC = () => {
             initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
             onSubmit={addMission} className="nu-card w-full max-w-lg p-10 space-y-8"
            >
-              <h3 className="text-2xl font-black uppercase italic">Designar Missão CEO</h3>
+              <h3 className="text-2xl font-black uppercase italic">Nova Missão</h3>
               <div className="space-y-6">
                  <input required className="nu-input w-full font-bold uppercase" value={form.titulo} onChange={e=>setForm({...form, titulo: e.target.value})} placeholder="TÍTULO DA MISSÃO" />
                  <div className="grid grid-cols-2 gap-4">

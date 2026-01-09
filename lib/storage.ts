@@ -1,58 +1,33 @@
-
 import { Produto, Venda, LancamentoFinanceiro, EstatisticasUsuario, ConfiguracoesApp, Missao, PrioridadeMissao } from '../types';
 
 const CHAVES = {
-  PRODUTOS: 'dropos_v14_prod',
-  VENDAS: 'dropos_v14_vend',
-  FINAN: 'dropos_v14_fin',
-  ESTATS: 'dropos_v14_stat',
-  CONFIG: 'dropos_v14_conf',
-  MISSOES: 'dropos_v14_miss',
-  BACKUP: 'dropos_v14_master_backup'
+  PRODUTOS: 'dropos_v15_prod',
+  VENDAS: 'dropos_v15_vend',
+  FINAN: 'dropos_v15_fin',
+  ESTATS: 'dropos_v15_stat',
+  CONFIG: 'dropos_v15_conf',
+  MISSOES: 'dropos_v15_miss'
 };
 
 const generateId = () => Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
 
-// Utilitário de leitura segura
 const safeRead = <T>(key: string, defaultValue: T): T => {
   try {
     const data = localStorage.getItem(key);
     return data ? JSON.parse(data) : defaultValue;
-  } catch (e) {
-    console.error(`Erro Crítico na Leitura de ${key}:`, e);
-    return defaultValue;
-  }
-};
-
-// Sistema de Snapshot automático
-const performSnapshot = () => {
-  try {
-    const data = {
-      prod: localStorage.getItem(CHAVES.PRODUTOS),
-      vend: localStorage.getItem(CHAVES.VENDAS),
-      fin: localStorage.getItem(CHAVES.FINAN),
-      stat: localStorage.getItem(CHAVES.ESTATS),
-      conf: localStorage.getItem(CHAVES.CONFIG),
-      miss: localStorage.getItem(CHAVES.MISSOES),
-      ts: Date.now()
-    };
-    localStorage.setItem(CHAVES.BACKUP, JSON.stringify(data));
-  } catch (e) {
-    console.warn('Snapshot de segurança falhou (espaço insuficiente?)');
-  }
+  } catch (e) { return defaultValue; }
 };
 
 export const storage = {
   configuracoes: {
     obter: (): ConfiguracoesApp => safeRead(CHAVES.CONFIG, {
       modoVisual: 'normal', modoGhost: false, mostrarXP: true, tema: 'dark',
-      codename: 'Operador Alfa', storeName: 'Comando Drop',
-      metas: { mensal: 0, diaria: 0 },
-      financeiro: { regime: 'MEI', aliquotaImposto: 0, valorDasMensal: 72, reservaEmergencia: 0, porcentagemSocio: 0, porcentagemFuncionario: 5 },
+      codename: 'OPERADOR ALFA', storeName: 'COMANDO DROP',
+      metas: { mensal: 10000, diaria: 300 },
+      financeiro: { regime: 'MEI', aliquotaImposto: 6, valorDasMensal: 72, reservaEmergencia: 0, porcentagemSocio: 0, porcentagemFuncionario: 5 },
       pomodoroTime: 25
     }),
     salvar: (conf: ConfiguracoesApp) => { 
-      performSnapshot();
       localStorage.setItem(CHAVES.CONFIG, JSON.stringify(conf)); 
       window.dispatchEvent(new Event('storage-update')); 
     }
@@ -61,25 +36,24 @@ export const storage = {
   vendas: {
     obterTodas: (): Venda[] => safeRead(CHAVES.VENDAS, []),
     salvar: (v: Partial<Venda>) => {
-      performSnapshot();
       const config = storage.configuracoes.obter();
       const todas = storage.vendas.obterTodas();
       
       const faturamento = Math.max(0, (v.valor_venda_un || 0) * (v.quantidade || 0));
       const recebido = Math.max(0, v.valor_liquido_recebido || 0);
-      const taxas = Math.max(0, faturamento - recebido);
       const custoCMV = Math.max(0, v.custo_mercadoria_total || 0);
       const ads = Math.max(0, v.custo_ads || 0);
       
-      const lucroOp = Math.max(0, recebido - custoCMV - ads);
-      const comissao = (lucroOp * config.financeiro.porcentagemFuncionario) / 100;
-      const lucroFinal = Math.max(0, lucroOp - comissao);
+      const impostos = (faturamento * config.financeiro.aliquotaImposto) / 100;
+      const lucroOp = recebido - custoCMV - ads - impostos;
+      const comissao = (lucroOp > 0 ? (lucroOp * config.financeiro.porcentagemFuncionario) / 100 : 0);
+      const lucroFinal = lucroOp - comissao;
       
       const novaVenda = { 
         ...v, 
         id: generateId(), 
         faturamento_bruto: faturamento,
-        taxas_plataforma: taxas,
+        taxas_plataforma: Math.max(0, faturamento - recebido),
         comissao_paga: comissao,
         lucro_real: lucroFinal 
       } as Venda;
@@ -87,20 +61,13 @@ export const storage = {
       localStorage.setItem(CHAVES.VENDAS, JSON.stringify([...todas, novaVenda]));
       
       storage.financeiro.salvar({ 
-        descricao: `Recebimento: ${novaVenda.produto_nome}`, 
-        valor: recebido, 
-        tipo: 'Receita', 
-        categoria: 'Vendas', 
-        status: 'Pago',
-        venda_id: novaVenda.id,
-        data: novaVenda.data_venda
+        descricao: `Recebimento: ${novaVenda.produto_nome}`, valor: recebido, tipo: 'Receita', categoria: 'Vendas', status: 'Pago', venda_id: novaVenda.id, data: novaVenda.data_venda
       });
 
-      storage.usuario.adicionarExp(Math.floor(Math.random() * 200) + 150);
+      storage.usuario.adicionarExp(150);
       window.dispatchEvent(new Event('storage-update'));
     },
     excluir: (id: string) => {
-      performSnapshot();
       const todas = storage.vendas.obterTodas();
       localStorage.setItem(CHAVES.VENDAS, JSON.stringify(todas.filter(v => v.id !== id)));
       const financeiro = storage.financeiro.obterTodos().filter(f => f.venda_id !== id);
@@ -113,12 +80,17 @@ export const storage = {
     obterTodos: (): LancamentoFinanceiro[] => safeRead(CHAVES.FINAN, []),
     salvar: (l: Partial<LancamentoFinanceiro>) => {
       const todos = storage.financeiro.obterTodos();
-      localStorage.setItem(CHAVES.FINAN, JSON.stringify([...todos, { ...l, id: generateId(), valor: Math.max(0, l.valor || 0) }]));
+      const novo = { 
+        ...l, 
+        id: generateId(), 
+        valor: Math.max(0, l.valor || 0),
+        is_fixo: l.categoria === 'Software' || l.categoria === 'Fixo' || l.is_fixo
+      };
+      localStorage.setItem(CHAVES.FINAN, JSON.stringify([...todos, novo]));
       window.dispatchEvent(new Event('storage-update'));
     },
     excluir: (id: string) => {
-      const todos = storage.financeiro.obterTodos();
-      localStorage.setItem(CHAVES.FINAN, JSON.stringify(todos.filter(f => f.id !== id)));
+      localStorage.setItem(CHAVES.FINAN, JSON.stringify(storage.financeiro.obterTodos().filter(f => f.id !== id)));
       window.dispatchEvent(new Event('storage-update'));
     }
   },
@@ -132,31 +104,31 @@ export const storage = {
       window.dispatchEvent(new Event('storage-update'));
     },
     excluir: (id: string) => {
-      const todos = storage.produtos.obterTodos();
-      localStorage.setItem(CHAVES.PRODUTOS, JSON.stringify(todos.filter(p => p.id !== id)));
+      localStorage.setItem(CHAVES.PRODUTOS, JSON.stringify(storage.produtos.obterTodos().filter(p => p.id !== id)));
       window.dispatchEvent(new Event('storage-update'));
     }
   },
 
   usuario: {
     obterEstats: (): EstatisticasUsuario => {
-      const data = safeRead(CHAVES.ESTATS, null);
-      if (!data) return { nivel: 1, experiencia: 0, proxNivelExp: 1000, patente: 'Recruta', sequencia: 0, conquistas: [], skills: [], health_score: 100 };
-      
-      let patente = 'Recruta';
-      if (data.nivel > 50) patente = 'Lenda Viva';
-      else if (data.nivel > 30) patente = 'Comandante';
-      else if (data.nivel > 15) patente = 'Especialista';
-      else if (data.nivel > 5) patente = 'Operador';
-      
+      const data = safeRead(CHAVES.ESTATS, { nivel: 1, experiencia: 0, proxNivelExp: 1000, patente: 'RECRUTA', sequencia: 1, conquistas: [], skills: [], health_score: 100 });
+      let patente = 'RECRUTA';
+      if (data.nivel > 50) patente = 'GENERAL';
+      else if (data.nivel > 20) patente = 'COMANDANTE';
+      else if (data.nivel > 5) patente = 'OPERADOR';
       return { ...data, patente };
     },
     adicionarExp: (exp: number) => {
       const stats = storage.usuario.obterEstats();
       stats.experiencia += exp;
       
-      // Efeito visual instantâneo de XP subindo
-      window.dispatchEvent(new CustomEvent('xp-gained', { detail: { amount: exp } }));
+      const text = document.createElement('div');
+      text.className = 'xp-text';
+      text.innerText = `+${exp} XP`;
+      text.style.left = `${Math.random() * 40 + 30}%`;
+      text.style.top = `${Math.random() * 20 + 40}%`;
+      document.body.appendChild(text);
+      setTimeout(() => text.remove(), 1200);
 
       while (stats.experiencia >= stats.proxNivelExp) {
         stats.experiencia -= stats.proxNivelExp;
@@ -172,9 +144,8 @@ export const storage = {
   missoes: {
     obterTodas: (): Missao[] => safeRead(CHAVES.MISSOES, []),
     salvar: (titulo: string, prioridade: PrioridadeMissao, data_alvo: string) => {
-      const bases = { Baixa: 200, Média: 500, Alta: 1000, Crítica: 2500 };
-      const recompensa = Math.floor(Math.random() * (bases[prioridade] * 0.3)) + bases[prioridade];
-      const nova: Missao = { id: generateId(), titulo, prioridade, data_alvo, recompensa, progresso: 0, objetivo: 1, completa: false, frequencia: 'Livre', categoria: 'CEO' };
+      const recompensa = Math.floor(Math.random() * 200) + 300;
+      const nova: Missao = { id: generateId(), titulo, prioridade, data_alvo, recompensa, progresso: 0, objetivo: 1, completa: false, frequencia: 'Diária', categoria: 'Operacional' };
       localStorage.setItem(CHAVES.MISSOES, JSON.stringify([...storage.missoes.obterTodas(), nova]));
       window.dispatchEvent(new Event('storage-update'));
     },
@@ -200,11 +171,11 @@ export const notificar = (msg: string) => {
   const container = document.getElementById('toasts');
   if (!container) return;
   const t = document.createElement('div');
-  t.className = "nu-card p-5 bg-[var(--bg-card)] border-l-8 border-[var(--nu-purple)] text-white text-[12px] font-black uppercase tracking-widest shadow-2xl flex items-center gap-4 animate-in slide-in-from-right";
-  t.innerHTML = `<div class="w-2 h-2 rounded-full bg-[var(--nu-purple)] animate-pulse"></div> <span>${msg}</span>`;
+  t.className = "nu-card p-4 bg-[var(--bg-card)] border-l-4 border-[var(--nu-purple)] text-[var(--text-main)] text-[11px] font-black uppercase tracking-wider flex items-center gap-3 animate-in slide-in-from-right duration-300 shadow-2xl";
+  t.innerHTML = `<div class="w-2 h-2 rounded-full bg-[var(--nu-purple)]"></div> <span>${msg}</span>`;
   container.appendChild(t);
   setTimeout(() => {
     t.classList.add('animate-out', 'fade-out', 'slide-out-to-right');
-    setTimeout(() => t.remove(), 500);
-  }, 4000);
+    setTimeout(() => t.remove(), 300);
+  }, 3000);
 };

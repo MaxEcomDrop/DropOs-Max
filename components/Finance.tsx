@@ -1,16 +1,16 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  Plus, Wallet, X, Trash2, Search, Calendar, Filter, Layers, ArrowUpRight, ArrowDownLeft
+  Plus, Wallet, X, Trash2, Search, ArrowUpRight, ArrowDownLeft
 } from 'lucide-react';
 import { storage, notificar } from '../lib/storage';
-import { LancamentoFinanceiro, CategoriaFinanceira } from '../types';
+import { LancamentoFinanceiro, FiltroData } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const Finance: React.FC<{ isOlheiro: boolean }> = ({ isOlheiro }) => {
   const [entries, setEntries] = useState<LancamentoFinanceiro[]>([]);
   const [formOpen, setFormOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [tab, setTab] = useState<'historico' | 'agenda'>('historico');
   
   const [form, setForm] = useState<Partial<LancamentoFinanceiro>>({ 
     descricao: '', valor: 0, tipo: 'Despesa', categoria: 'Fixo', 
@@ -24,73 +24,81 @@ export const Finance: React.FC<{ isOlheiro: boolean }> = ({ isOlheiro }) => {
     return () => window.removeEventListener('storage-update', load);
   }, []);
 
-  const fmt = (v: number) => {
-    if (isOlheiro) return 'R$ ****';
-    return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  };
+  const fmt = (v: number) => isOlheiro ? 'R$ ****' : v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+  const totals = useMemo(() => {
+    const pagoReceita = entries.filter(e => e.status === 'Pago' && e.tipo === 'Receita').reduce((a, b) => a + b.valor, 0);
+    const pagoDespesa = entries.filter(e => e.status === 'Pago' && e.tipo === 'Despesa').reduce((a, b) => a + b.valor, 0);
+    const pendReceita = entries.filter(e => e.status === 'Pendente' && e.tipo === 'Receita').reduce((a, b) => a + b.valor, 0);
+    const pendDespesa = entries.filter(e => e.status === 'Pendente' && e.tipo === 'Despesa').reduce((a, b) => a + b.valor, 0);
+    return { saldo: pagoReceita - pagoDespesa, pendReceita, pendDespesa };
+  }, [entries]);
 
   return (
-    <div className="flex flex-col gap-10 pb-40 text-left">
-      <div className="flex justify-between items-center">
+    <div className="flex flex-col gap-6 md:gap-10 text-left w-full pb-40 px-1">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 px-1">
          <div>
-            <h2 className="text-3xl font-black italic uppercase tracking-tighter">Cofre Central</h2>
-            <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.4em]">Gestão de Fluxo: Fixos, Variáveis e Longo Prazo</p>
+            <h2 className="text-3xl font-black italic uppercase tracking-tighter">Cofre e Fluxo</h2>
+            <p className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.4em] mt-1">Gestão de Tesouraria</p>
          </div>
-         <button onClick={() => setFormOpen(true)} className="btn-fire !py-3 !px-8 flex items-center gap-3">
-            <Plus size={18} /> MOVIMENTAÇÃO
+         <button onClick={() => setFormOpen(true)} className="btn-fire !w-full md:!w-64 h-14">
+            <Plus size={20} /> NOVO LANÇAMENTO
          </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-         <div className="nu-card p-8 border-l-4 border-l-[var(--nu-success)]">
-            <p className="text-[9px] font-black uppercase text-[var(--text-muted)] mb-2">Entradas (Receitas)</p>
-            <h4 className="text-2xl font-black italic text-[var(--nu-success)]">{fmt(entries.filter(e=>e.tipo==='Receita').reduce((a,b)=>a+b.valor,0))}</h4>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-1">
+         <div className="nu-card p-8 border-l-8 border-l-[var(--nu-purple)]">
+            <p className="text-[10px] font-black uppercase text-[var(--text-muted)] mb-2 tracking-widest">DISPONÍVEL</p>
+            <h4 className="text-2xl font-black italic text-[var(--text-main)]">{fmt(totals.saldo)}</h4>
          </div>
-         <div className="nu-card p-8 border-l-4 border-l-red-500">
-            <p className="text-[9px] font-black uppercase text-[var(--text-muted)] mb-2">Saídas (Fixo/Operacional)</p>
-            <h4 className="text-2xl font-black italic text-red-500">{fmt(entries.filter(e=>e.tipo==='Despesa').reduce((a,b)=>a+b.valor,0))}</h4>
+         <div className="nu-card p-8 border-l-8 border-l-[var(--nu-success)]">
+            <p className="text-[10px] font-black uppercase text-[var(--text-muted)] mb-2 tracking-widest">A RECEBER (TOTAL)</p>
+            <h4 className="text-2xl font-black italic text-[var(--text-main)]">{fmt(totals.pendReceita)}</h4>
          </div>
-         <div className="nu-card p-8 border-l-4 border-l-[var(--nu-purple)]">
-            <p className="text-[9px] font-black uppercase text-[var(--text-muted)] mb-2">Saldo em Conta</p>
-            <h4 className="text-2xl font-black italic text-[var(--nu-purple)]">
-              {fmt(entries.filter(e=>e.tipo==='Receita').reduce((a,b)=>a+b.valor,0) - entries.filter(e=>e.tipo==='Despesa').reduce((a,b)=>a+b.valor,0))}
-            </h4>
+         <div className="nu-card p-8 border-l-8 border-l-red-500">
+            <p className="text-[10px] font-black uppercase text-[var(--text-muted)] mb-2 tracking-widest">A PAGAR (TOTAL)</p>
+            <h4 className="text-2xl font-black italic text-[var(--text-main)]">{fmt(totals.pendDespesa)}</h4>
          </div>
       </div>
 
-      <div className="nu-card overflow-hidden">
-         <div className="p-8 border-b border-white/5 flex flex-col md:flex-row gap-4 items-center">
+      <div className="nu-card mx-1 overflow-hidden">
+         <div className="p-6 border-b border-[var(--border-color)] flex flex-col md:flex-row gap-6">
             <div className="relative flex-1">
                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
-               <input className="nu-input !pl-12 w-full" placeholder="Filtrar por Descrição..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} />
+               <input className="nu-input !pl-12 h-12" placeholder="Pesquisar..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} />
+            </div>
+            <div className="flex bg-[var(--bg-input)] p-1 rounded-xl w-fit">
+               {['historico', 'agenda'].map(t => (
+                 <button key={t} onClick={() => setTab(t as any)} className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${tab === t ? 'bg-[var(--nu-purple)] text-white' : 'text-[var(--text-muted)]'}`}>{t}</button>
+               ))}
             </div>
          </div>
+         
          <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="w-full text-left min-w-[700px]">
                <thead>
-                  <tr className="bg-black/40 text-[9px] font-black uppercase text-[var(--text-muted)]">
-                     <th className="px-8 py-5">Data / Vencimento</th>
-                     <th className="px-8 py-5">Identificação</th>
-                     <th className="px-8 py-5 text-center">Classe</th>
-                     <th className="px-8 py-5 text-right">Valor</th>
-                     <th className="px-8 py-5 text-center">Ações</th>
+                  <tr className="bg-[var(--bg-input)] text-[10px] font-black uppercase text-[var(--text-muted)] tracking-widest">
+                     <th className="px-8 py-4">Data</th>
+                     <th className="px-8 py-4">Descrição</th>
+                     <th className="px-8 py-4 text-right">Valor</th>
+                     <th className="px-8 py-4 text-center">Status</th>
+                     <th className="px-8 py-4 text-center">Ações</th>
                   </tr>
                </thead>
-               <tbody className="divide-y divide-white/5">
+               <tbody className="divide-y divide-[var(--border-color)]">
                   {entries.filter(e => e.descricao.toLowerCase().includes(searchTerm.toLowerCase())).map(e => (
-                    <tr key={e.id} className="hover:bg-white/5 group transition-all">
-                       <td className="px-8 py-5 text-[10px] font-bold text-[var(--text-muted)]">{new Date(e.data).toLocaleDateString()}</td>
-                       <td className="px-8 py-5 text-xs font-black uppercase italic">{isOlheiro ? '******' : e.descricao}</td>
-                       <td className="px-8 py-5 text-center">
-                          <span className={`text-[8px] font-black px-2 py-1 rounded bg-white/5 ${e.is_fixo ? 'text-orange-400' : 'text-blue-400'}`}>
-                             {e.is_fixo ? 'FIXA' : 'VARIÁVEL'}
-                          </span>
-                       </td>
+                    <tr key={e.id} className="hover:bg-[var(--nu-purple)]/5 transition-all group">
+                       <td className="px-8 py-5 text-[11px] font-bold text-[var(--text-muted)]">{new Date(e.data).toLocaleDateString()}</td>
+                       <td className="px-8 py-5 text-sm font-black uppercase italic text-[var(--text-main)]">{e.descricao}</td>
                        <td className={`px-8 py-5 text-right font-black italic ${e.tipo === 'Receita' ? 'text-[var(--nu-success)]' : 'text-red-400'}`}>
-                          {e.tipo === 'Receita' ? '+' : '-'}{fmt(e.valor)}
+                          {e.tipo === 'Receita' ? <ArrowUpRight size={14} className="inline mr-1" /> : <ArrowDownLeft size={14} className="inline mr-1" />}
+                          {fmt(e.valor)}
                        </td>
                        <td className="px-8 py-5 text-center">
-                          <button onClick={() => storage.financeiro.excluir(e.id)} className="p-2 text-red-500/20 group-hover:text-red-500 transition-all"><Trash2 size={16}/></button>
+                          <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase ${e.status === 'Pago' ? 'bg-[var(--nu-success)]/10 text-[var(--nu-success)]' : 'bg-yellow-500/10 text-yellow-500'}`}>{e.status}</span>
+                       </td>
+                       <td className="px-8 py-5 text-center">
+                          <button onClick={() => storage.financeiro.excluir(e.id)} className="p-2 text-red-500/30 hover:text-red-500 transition-colors"><Trash2 size={16}/></button>
                        </td>
                     </tr>
                   ))}
@@ -101,44 +109,38 @@ export const Finance: React.FC<{ isOlheiro: boolean }> = ({ isOlheiro }) => {
 
       <AnimatePresence>
          {formOpen && (
-           <div className="fixed inset-0 z-[10000] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md">
-              <motion.form 
-                initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                onSubmit={(ev) => {
-                  ev.preventDefault();
-                  storage.financeiro.salvar(form);
-                  setFormOpen(false);
-                }}
-                className="nu-card w-full max-w-xl p-10 space-y-8"
+           <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md overflow-y-auto">
+              <motion.form initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                onSubmit={(ev) => { ev.preventDefault(); storage.financeiro.salvar(form); setFormOpen(false); notificar("Protocolo Registrado"); }}
+                className="nu-card w-full max-w-xl p-6 md:p-10 space-y-8 my-8"
               >
-                 <div className="flex justify-between items-center border-b border-white/5 pb-6">
+                 <div className="flex justify-between items-center border-b border-[var(--border-color)] pb-6">
                     <h3 className="text-2xl font-black uppercase italic">Nova Movimentação</h3>
-                    <button type="button" onClick={() => setFormOpen(false)} className="p-2 hover:bg-white/5 rounded-full"><X/></button>
+                    <button type="button" onClick={() => setFormOpen(false)} className="text-[var(--text-muted)] hover:text-white"><X size={28}/></button>
                  </div>
                  <div className="grid grid-cols-2 gap-4">
-                    <button type="button" onClick={()=>setForm({...form, tipo:'Receita', is_fixo: false})} className={`p-4 rounded-xl border-2 font-black text-[10px] ${form.tipo==='Receita' ? 'bg-[var(--nu-success)]/10 border-[var(--nu-success)] text-[var(--nu-success)]' : 'opacity-30'}`}>ENTRADA</button>
-                    <button type="button" onClick={()=>setForm({...form, tipo:'Despesa'})} className={`p-4 rounded-xl border-2 font-black text-[10px] ${form.tipo==='Despesa' ? 'bg-red-500/10 border-red-500 text-red-500' : 'opacity-30'}`}>SAÍDA</button>
+                    <button type="button" onClick={()=>setForm({...form, tipo:'Receita'})} className={`p-5 rounded-2xl border-2 font-black transition-all ${form.tipo==='Receita' ? 'bg-[var(--nu-success)]/10 border-[var(--nu-success)] text-[var(--nu-success)]' : 'opacity-20 border-transparent bg-[var(--bg-input)]'}`}>ENTRADA</button>
+                    <button type="button" onClick={()=>setForm({...form, tipo:'Despesa'})} className={`p-5 rounded-2xl border-2 font-black transition-all ${form.tipo==='Despesa' ? 'bg-red-500/10 border-red-500 text-red-500' : 'opacity-20 border-transparent bg-[var(--bg-input)]'}`}>SAÍDA</button>
                  </div>
                  <div className="space-y-4">
-                    <input required className="nu-input w-full font-bold uppercase" value={form.descricao} onChange={e=>setForm({...form, descricao:e.target.value})} placeholder="DESCRIÇÃO DO LANÇAMENTO" />
-                    <div className="grid grid-cols-2 gap-4">
-                       <input type="number" step="0.01" min="0" required className="nu-input w-full font-black text-center" value={form.valor || ''} onChange={e=>setForm({...form, valor:Number(e.target.value)})} placeholder="R$ 0,00" />
-                       <input type="date" required className="nu-input w-full font-black text-center" value={form.data} onChange={e=>setForm({...form, data:e.target.value})} />
+                    <div className="space-y-1">
+                       <label className="text-[9px] font-black text-[var(--text-muted)] uppercase ml-2">Descrição</label>
+                       <input required className="nu-input font-bold uppercase" value={form.descricao} onChange={e=>setForm({...form, descricao:e.target.value})} placeholder="EX: SERVIDOR VPS" />
                     </div>
-                    {form.tipo === 'Despesa' && (
-                      <div className="flex gap-4">
-                        <label className="flex-1 cursor-pointer">
-                          <input type="checkbox" className="hidden" checked={form.is_fixo} onChange={e=>setForm({...form, is_fixo: e.target.checked})} />
-                          <div className={`p-3 rounded-xl border-2 font-black text-[9px] text-center transition-all ${form.is_fixo ? 'border-orange-500 bg-orange-500/10' : 'opacity-20'}`}>DESPESA FIXA</div>
-                        </label>
-                        <label className="flex-1 cursor-pointer">
-                          <input type="checkbox" className="hidden" checked={!form.is_fixo} onChange={e=>setForm({...form, is_fixo: !e.target.checked})} />
-                          <div className={`p-3 rounded-xl border-2 font-black text-[9px] text-center transition-all ${!form.is_fixo ? 'border-blue-500 bg-blue-500/10' : 'opacity-20'}`}>VARIÁVEL</div>
-                        </label>
-                      </div>
-                    )}
+                    <div className="grid grid-cols-2 gap-4">
+                       <div className="space-y-1">
+                          <label className="text-[9px] font-black text-[var(--text-muted)] uppercase ml-2">Valor (R$)</label>
+                          <input type="number" step="0.01" required className="nu-input font-black" value={form.valor || ''} onChange={e=>setForm({...form, valor:Number(e.target.value)})} placeholder="0,00" />
+                       </div>
+                       <div className="space-y-1">
+                          <label className="text-[9px] font-black text-[var(--text-muted)] uppercase ml-2">Data</label>
+                          <input type="date" required className="nu-input font-bold" value={form.data} onChange={e=>setForm({...form, data:e.target.value})} />
+                       </div>
+                    </div>
                  </div>
-                 <button type="submit" className="btn-fire w-full py-6">EFETUAR LANÇAMENTO</button>
+                 <div className="flex gap-4">
+                    <button type="submit" className="btn-fire !w-full h-16 text-lg">EFETIVAR LANÇAMENTO</button>
+                 </div>
               </motion.form>
            </div>
          )}
